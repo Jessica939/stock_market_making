@@ -1,5 +1,20 @@
 # Pair execution and holding revision
 
+## Historical epoch-phase prior
+
+The pair cycle is now usable on the first clean synchronized snapshot. Historical
+market recordings across September 9--11 show a stable 180-second A-minus-B
+cycle whose peak occurs near Unix epoch modulo 180 = 165.95 seconds. Both pair
+configs seed that phase, center 0, amplitude 3.1, RMSE 0.9 and fit weight 0.65.
+
+The phase is anchored to exchange timestamps, not process start time. A short
+market-data gap freezes trading but does not force another 30-second discovery
+period: the next valid snapshot restores the same epoch phase immediately. For
+the first full cycle, online fitting adjusts only center and amplitude with a
+ridge toward the historical prior. After a full cycle it may adjust phase by at
+most five seconds. Entry market-quality and cost checks are unchanged; an active
+prior is permission to evaluate a signal, not permission to bypass those checks.
+
 The B-only 15-second directional cycle strategy from the full-market analysis
 has its own [B cycle entry point](../b_cycle/README.md). This Pair entry point
 continues to trade two legs and is not the B-only experiment.

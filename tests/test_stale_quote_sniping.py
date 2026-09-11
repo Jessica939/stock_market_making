@@ -102,14 +102,60 @@ class StaleQuoteTests(unittest.TestCase):
         self.engine.step()
         self.assertEqual(self.exchange.positions["PHILIPS_B"], 0)
 
-    def test_inherited_inventory_is_rejected(self):
-        self.exchange.positions["PHILIPS_A"] = 1
+    def test_unexplained_b_change_after_baseline_is_rejected(self):
+        self.exchange.positions["PHILIPS_B"] = 1
         with self.assertRaises(ExecutionFault):
-            self.engine.startup()
+            self.engine.step()
+
+    def test_inherited_a_and_b_are_preserved_as_baseline(self):
+        clock = SimClock()
+        exchange = ReplayExchange(SYMBOLS, clock, fill_fraction=1)
+        exchange.positions.update(PHILIPS_A=-18, PHILIPS_B=9)
+        exchange.advance(dict(epoch=1800000000, books={
+            iid: dict(timestamp=1800000000, tick=0.1,
+                      bids=[[100.0, 1000]], asks=[[100.2, 1000]])
+            for iid in SYMBOLS
+        }))
+        journal = Journal()
+        engine = Engine(exchange, self.config, journal, clock.monotonic, clock.sleep,
+                        lambda: 1800000000 + clock.now,
+                        terminal_quantity=exchange.ioc_terminal_quantity)
+        engine.startup()
+        engine.model = NS(observe=lambda **kwargs: dict(self.signal))
+        engine.step()
+        clock.now = 0.5
+        exchange.advance(dict(epoch=1800000000.5, books={
+            iid: dict(timestamp=1800000000.5, tick=0.1,
+                      bids=[[100.0, 1000]], asks=[[100.2, 1000]])
+            for iid in SYMBOLS
+        }))
+        engine.step()
+        self.assertEqual(exchange.positions, {"PHILIPS_A": -18, "PHILIPS_B": 11})
+        self.assertEqual(engine.executor.positions()["PHILIPS_B"], 2)
+        clock.now = 1.0
+        exchange.advance(dict(epoch=1800000001, books={
+            "PHILIPS_A": dict(timestamp=1800000001, tick=0.1,
+                              bids=[[100.0, 1000]], asks=[[100.2, 1000]]),
+            "PHILIPS_B": dict(timestamp=1800000001, tick=0.1,
+                              bids=[[101.0, 1000]], asks=[[101.2, 1000]]),
+        }))
+        engine.step()
+        clock.now = 1.5
+        exchange.advance(dict(epoch=1800000001.5, books={
+            "PHILIPS_A": dict(timestamp=1800000001.5, tick=0.1,
+                              bids=[[100.0, 1000]], asks=[[100.2, 1000]]),
+            "PHILIPS_B": dict(timestamp=1800000001.5, tick=0.1,
+                              bids=[[101.0, 1000]], asks=[[101.2, 1000]]),
+        }))
+        engine.step()
+        self.assertEqual(exchange.positions, {"PHILIPS_A": -18, "PHILIPS_B": 9})
+        summary = engine.finish()
+        self.assertTrue(summary["flat"])
+        self.assertEqual(summary["baseline_B"], 9)
 
     def test_replay_specification_is_guarded(self):
-        for key, value in (("order_lots", 3), ("hold_seconds", 15.0),
-                           ("entry_edge_ticks", 2.0), ("fee_per_lot", float("nan"))):
+        for key, value in (("order_lots", 21), ("hold_seconds", 0.0),
+                           ("entry_edge_ticks", 0.0), ("fee_per_lot", float("nan"))):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 validate(dict(self.config, **{key: value}))
 

@@ -30,16 +30,30 @@ class CycleSettings:
     quote_gain: float = 0.5
     max_quote_shift_ticks: float = 3.0
     adverse_size_fraction: float = 0.5
+    # Optional cross-session prior.  The phase is expressed on the exchange
+    # epoch clock so process restarts and short data gaps cannot move it.
+    prior_enabled: bool = False
+    prior_peak_epoch_seconds: float = 165.95
+    prior_center: float = 0.0
+    prior_amplitude: float = 3.1
+    prior_rmse: float = 0.9
+    prior_fit_weight: float = 0.65
+    prior_fit_r2: float = 0.88
+    prior_strength: float = 20.0
+    prior_phase_lock_seconds: float = 180.0
+    prior_max_phase_shift_seconds: float = 5.0
 
     def __post_init__(self):
-        if type(self.enabled) is not bool:
-            raise ValueError('enabled must be boolean')
+        if type(self.enabled) is not bool or type(self.prior_enabled) is not bool:
+            raise ValueError('enabled flags must be boolean')
         for name in self.__dataclass_fields__:
-            if name == 'enabled':
+            if name in ('enabled', 'prior_enabled', 'prior_center'):
                 continue
             value = getattr(self, name)
             if isinstance(value, bool) or not math.isfinite(value) or value <= 0:
                 raise ValueError(name + ' must be finite and positive')
+        if isinstance(self.prior_center, bool) or not math.isfinite(self.prior_center):
+            raise ValueError('prior_center must be finite')
         if not self.min_fit_seconds <= self.ramp_seconds <= self.history_seconds:
             raise ValueError('require min_fit_seconds <= ramp_seconds <= history_seconds')
         if self.sample_seconds > self.period_seconds / 20:
@@ -47,6 +61,11 @@ class CycleSettings:
         if self.horizon_seconds > self.period_seconds / 4:
             raise ValueError('quote horizon must be at most a quarter cycle')
         if (self.adverse_size_fraction > 1 or self.quote_gain > 1
+                or self.prior_fit_weight > 1 or not 0 < self.prior_fit_r2 <= 1
+                or (self.prior_enabled
+                    and self.prior_phase_lock_seconds > self.history_seconds)
+                or (self.prior_enabled
+                    and self.prior_max_phase_shift_seconds > self.period_seconds / 4)
                 or self.min_amplitude_ticks >= self.max_amplitude_ticks):
             raise ValueError('invalid cycle thresholds')
 
@@ -117,6 +136,20 @@ class CycleSignal:
         self.quality = {}
         self.reason = 'warmup'
 
+    def _activate_prior(self):
+        """Install the historical cycle without waiting for local refitting."""
+        cfg = self.settings
+        phase = 2 * math.pi * (cfg.prior_peak_epoch_seconds % cfg.period_seconds) / cfg.period_seconds
+        self.weights = [cfg.prior_center,
+                        cfg.prior_amplitude * math.sin(phase),
+                        cfg.prior_amplitude * math.cos(phase)]
+        self.quality = dict(
+            fit_rmse=cfg.prior_rmse, fit_r2=cfg.prior_fit_r2,
+            fitted_amplitude=cfg.prior_amplitude, fit_samples=0,
+            fit_weight=cfg.prior_fit_weight,
+            quality_scope='historical_epoch_phase_prior')
+        self.reason = 'active'
+
     def _x(self, t):
         angle = 2 * math.pi * ((t - self.origin) % self.settings.period_seconds) / self.settings.period_seconds
         return [1.0, math.sin(angle), math.cos(angle)]
@@ -135,21 +168,85 @@ class CycleSignal:
                     matrix[i][j] += x[i] * x[j]
         return _solve(matrix, rhs)
 
+    def _fit_locked_phase(self, rows, tick):
+        """Fine-tune center/amplitude while keeping the validated phase fixed."""
+        cfg = self.settings
+        peak = 2 * math.pi * (cfg.prior_peak_epoch_seconds % cfg.period_seconds) / cfg.period_seconds
+        wave = []
+        for t, y in rows:
+            x = self._x(t)
+            wave.append((x[1] * math.sin(peak) + x[2] * math.cos(peak), y))
+        strength = cfg.prior_strength
+        n = len(wave) + strength
+        sq = sum(q for q, _ in wave)
+        sqq = sum(q * q for q, _ in wave) + strength
+        sy = sum(y for _, y in wave) + strength * cfg.prior_center
+        sqy = sum(q * y for q, y in wave) + strength * cfg.prior_amplitude
+        det = n * sqq - sq * sq
+        if abs(det) < 1e-10:
+            return
+        center = (sy * sqq - sq * sqy) / det
+        amplitude = (n * sqy - sq * sy) / det
+        amplitude = max(cfg.min_amplitude_ticks * tick,
+                        min(cfg.max_amplitude_ticks * tick, amplitude))
+        weights = [center, amplitude * math.sin(peak), amplitude * math.cos(peak)]
+        errors = [(y - self._predict(t, weights)) ** 2 for t, y in rows]
+        mse = sum(errors) / len(errors)
+        mean = sum(y for _, y in rows) / len(rows)
+        variance = sum((y - mean) ** 2 for _, y in rows) / len(rows)
+        r2 = 1 - mse / variance if variance > 1e-12 else -1.0
+        span = rows[-1][0] - rows[0][0]
+        blend = min(1.0, span / cfg.prior_phase_lock_seconds)
+        observed_weight = (max(0.0, min(1.0, r2))
+                           / (1 + math.sqrt(mse) / max(amplitude, tick)))
+        fit_weight = ((1 - blend) * cfg.prior_fit_weight
+                      + blend * observed_weight)
+        self.weights = weights
+        self.quality = dict(
+            fit_rmse=math.sqrt(mse), fit_r2=r2, fitted_amplitude=amplitude,
+            fit_samples=len(rows), fit_weight=fit_weight,
+            quality_scope='historical_phase_prior_online_amplitude')
+        self.reason = 'active'
+
     def _refit(self, now, tick):
         cfg = self.settings
         self.last_fit = now
-        self.weights = None
         rows = list(self.history)
         # Just enough observations to estimate three coefficients; no holdout
         # wait. The 30-second partial-cycle fit starts with a small weight.
-        self.quality = {}
         if len(rows) < 20 or rows[-1][0] - rows[0][0] < cfg.min_fit_seconds:
+            if cfg.prior_enabled:
+                # Preserve the usable prior; a short local sample is not better
+                # evidence than the stable cross-session phase.
+                if self.weights is None:
+                    self._activate_prior()
+                return
+            self.weights = None
+            self.quality = {}
             self.reason = 'warmup'
             return
+        if (cfg.prior_enabled
+                and rows[-1][0] - rows[0][0] < cfg.prior_phase_lock_seconds):
+            self._fit_locked_phase(rows, tick)
+            return
+        self.weights = None
+        self.quality = {}
         weights = self._fit(rows)
         if weights is None:
             self.reason = 'singular_fit'
             return
+        if cfg.prior_enabled:
+            # Once a full cycle is visible, permit only a bounded phase
+            # correction around the historically stable epoch phase.
+            center = weights[0]
+            amplitude = math.hypot(weights[1], weights[2])
+            fitted = (math.atan2(weights[1], weights[2]) * cfg.period_seconds
+                      / (2 * math.pi)) % cfg.period_seconds
+            prior = cfg.prior_peak_epoch_seconds % cfg.period_seconds
+            delta = (fitted - prior + cfg.period_seconds / 2) % cfg.period_seconds - cfg.period_seconds / 2
+            delta = math.copysign(min(abs(delta), cfg.prior_max_phase_shift_seconds), delta)
+            phase = 2 * math.pi * (prior + delta) / cfg.period_seconds
+            weights = [center, amplitude * math.sin(phase), amplitude * math.cos(phase)]
         errors = [(y - self._predict(t, weights)) ** 2 for t, y in rows]
         mse = sum(errors) / len(errors)
         mean = sum(y for _, y in rows) / len(rows)
@@ -162,7 +259,9 @@ class CycleSignal:
         self.quality = dict(fit_rmse=math.sqrt(mse), fit_r2=r2,
                             fitted_amplitude=amplitude, fit_samples=len(rows),
                             fit_weight=fit_weight,
-                            quality_scope='in_sample_fit_not_forecast_accuracy')
+                            quality_scope=('historical_phase_prior_bounded_online_fit'
+                                           if cfg.prior_enabled else
+                                           'in_sample_fit_not_forecast_accuracy'))
         if not cfg.min_amplitude_ticks * tick <= amplitude <= cfg.max_amplitude_ticks * tick:
             self.reason = 'amplitude_out_of_bounds'
             return
@@ -201,7 +300,15 @@ class CycleSignal:
         self.last_now = now
         self.ticks = tick_pair
         if self.origin is None:
-            self.origin = now
+            if cfg.prior_enabled:
+                # Map the monotonic strategy clock onto the exchange epoch.
+                # Held-position forecasts can then keep using the monotonic
+                # clock while restarts recover the same global phase.
+                phase_stamp = sum(stamps) / len(stamps)
+                self.origin = now - (phase_stamp % cfg.period_seconds)
+                self._activate_prior()
+            else:
+                self.origin = now
         mids = [(books[s].bids[0].price + books[s].asks[0].price) / 2 for s in symbols]
         basis = mids[0] - mids[1]
         new = self.stamps is None or all(a > b for a, b in zip(stamps, self.stamps))

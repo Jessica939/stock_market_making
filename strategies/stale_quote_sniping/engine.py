@@ -31,8 +31,9 @@ def validate(config):
         "refit_seconds", "max_gap_seconds",
     ))
     for key, low, high in (
-        ("order_lots", 1, 2), ("depth_reserve_lots", 0, 1000),
-        ("max_sweep_ticks", 0, 10), ("max_updates_per_second", 1, 22),
+        ("order_lots", 1, 20), ("depth_reserve_lots", 0, 1000),
+        ("replay_depth_reserve_lots", 0, 1000),
+        ("max_sweep_ticks", 0, 20), ("max_updates_per_second", 1, 22),
     ):
         value = config[key]
         if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
@@ -45,15 +46,56 @@ def validate(config):
                 or not math.isfinite(value) or value < 0
                 or (key == "stop_per_share" and value == 0)):
             raise ValueError("invalid " + key)
-    if config["hold_seconds"] != 5.0 or config["period_seconds"] != 180.0:
-        raise ValueError("hold_seconds=5 and period_seconds=180 are the replay-tested specification")
-    if config["entry_edge_ticks"] < 3.0:
-        raise ValueError("entry_edge_ticks below the replay-tested 3-tick floor")
     if not config["hold_seconds"] + config["execution_delay_seconds"] < config["closeout_seconds"] < config["session_seconds"]:
         raise ValueError("require hold + execution delay < closeout < session")
     if config["loop_seconds"] < 0.2 or config["settlement_seconds"] > 30:
         raise ValueError("loop must be >=0.2 seconds and settlement <=30 seconds")
     BasisSettings(**{key: config[key] for key in BasisSettings.__dataclass_fields__})
+
+
+class OwnedBExchange:
+    """Expose only this run's B delta to Executor, while trading the raw account.
+
+    A and the inherited B baseline are reference/account state, not inventory
+    owned by this strategy. Any unexplained B change still appears as a delta
+    and fails the engine's ownership checks.
+    """
+
+    def __init__(self, raw, baseline_b, baseline_cash):
+        self.raw = raw
+        self.baseline_b = baseline_b
+        self.baseline_cash = baseline_cash
+
+    def is_connected(self):
+        return self.raw.is_connected()
+
+    def get_positions(self):
+        positions = self.raw.get_positions()
+        if not isinstance(positions, dict) or B not in positions:
+            return positions
+        return {B: positions[B] - self.baseline_b}
+
+    def get_positions_and_cash(self):
+        holdings = self.raw.get_positions_and_cash()
+        if not isinstance(holdings, dict) or B not in holdings:
+            return holdings
+        item = holdings[B]
+        if not isinstance(item, dict):
+            return {B: item}
+        return {B: dict(item, volume=item.get("volume", self.baseline_b) - self.baseline_b,
+                        cash=item.get("cash", self.baseline_cash) - self.baseline_cash)}
+
+    def get_outstanding_orders(self, iid):
+        return self.raw.get_outstanding_orders(iid)
+
+    def poll_new_trades(self, iid):
+        return self.raw.poll_new_trades(iid)
+
+    def delete_order(self, iid, order_id):
+        return self.raw.delete_order(iid, order_id=order_id)
+
+    def insert_order(self, iid, **kwargs):
+        return self.raw.insert_order(iid, **kwargs)
 
 
 def object_book(raw):
@@ -192,13 +234,27 @@ class Engine:
         self.exchange, self.config, self.journal = exchange, config, journal
         self.clock, self.sleep, self.epoch = clock, sleep, epoch
         self.feed = Feed(exchange, config, epoch, clock)
+        positions = exchange.get_positions()
+        holdings = exchange.get_positions_and_cash()
+        if (not isinstance(positions, dict) or B not in positions
+                or any(isinstance(q, bool) or not isinstance(q, int) for q in positions.values())
+                or not isinstance(holdings, dict) or B not in holdings
+                or not isinstance(holdings[B], dict)):
+            raise ExecutionFault("cannot establish startup position/cash baseline")
+        baseline_cash = holdings[B].get("cash")
+        if (isinstance(baseline_cash, bool) or not isinstance(baseline_cash, (int, float))
+                or not math.isfinite(baseline_cash)):
+            raise ExecutionFault("cannot establish B cash baseline")
+        self.baseline_positions = positions.copy()
+        self.baseline_b = positions[B]
+        self.owned_exchange = OwnedBExchange(exchange, self.baseline_b, baseline_cash)
         execution_config = dict(
             config, position_limit=config["order_lots"], max_order_lots=config["order_lots"],
             max_net_lots=config["order_lots"], max_outstanding_volume=200,
             entry_slippage_ticks=config["max_sweep_ticks"],
             exit_slippage_ticks=config["max_sweep_ticks"],
         )
-        self.executor = Executor(exchange, SYMBOLS, self.feed, execution_config, journal,
+        self.executor = Executor(self.owned_exchange, (B,), self.feed, execution_config, journal,
                                  clock, sleep, terminal_quantity=terminal_quantity)
         settings = BasisSettings(**{key: config[key] for key in BasisSettings.__dataclass_fields__})
         self.model = CausalBasisModel(settings)
@@ -222,15 +278,14 @@ class Engine:
         self.equity_at = None
 
     def startup(self):
-        positions = self.exchange.get_positions()
-        if not isinstance(positions, dict) or any(isinstance(q, bool) or not isinstance(q, int) or q != 0
-                                                   for q in positions.values()):
-            raise ExecutionFault("stale quote sniper requires an entirely flat account at startup")
-        for iid in self.feed.instruments:
-            if self.exchange.get_outstanding_orders(iid):
-                raise ExecutionFault("cancel old strategy orders before startup")
-        self.executor.audit("stale_quote_startup")
+        if self.exchange.get_outstanding_orders(B):
+            raise ExecutionFault("cancel existing PHILIPS_B orders before startup")
+        owned = self.executor.audit("stale_quote_startup")
+        if owned[B] != 0:
+            raise ExecutionFault("B changed while establishing the startup baseline")
         self.cash0 = self.cash()
+        self.journal.emit("stale_inventory_baseline", positions=self.baseline_positions,
+                          baseline_B=self.baseline_b, owned_B_delta=0)
 
     def cash(self):
         holdings = self.exchange.get_positions_and_cash()
@@ -276,9 +331,9 @@ class Engine:
             raise ExecutionFault("invalid/reversed strategy clock")
         self.last_clock = now
         positions = self.executor.audit("stale_quote_step")
-        if positions[A] != 0 or abs(positions[B]) > self.config["order_lots"] or not self.executor.account_consistent:
+        if abs(positions[B]) > self.config["order_lots"] or not self.executor.account_consistent:
             raise ExecutionFault("unowned or inconsistent inventory")
-        if any(self.executor.orders(iid) for iid in SYMBOLS):
+        if self.executor.orders(B):
             raise ExecutionFault("unexpected resting order")
         if self.journal.failed or now >= self.cutoff:
             self.stopped = True
@@ -354,7 +409,8 @@ class Engine:
                                           decision_fair_B=pending["fair_B"],
                                           decision_edge=pending["edge"], volume=filled,
                                           opened_at=now, realized_before=realized)
-                        self.journal.emit("stale_entry_confirmed", position=self.executor.positions()[B],
+                        self.journal.emit("stale_entry_confirmed", owned_position=self.executor.positions()[B],
+                                          actual_position=self.exchange.get_positions().get(B),
                                           entry=self.entry, recheck=recheck)
                 except UnusableBook as exc:
                     self.journal.emit("stale_entry_blocked", reason=str(exc), decision=pending,
@@ -406,10 +462,13 @@ class Engine:
                 self.sleep(self.config["loop_seconds"])
         positions = self.executor.audit("stale_quote_finish") if self.exchange.is_connected() else None
         flat = (positions is not None and not any(positions.values()) and not self.executor.unresolved
-                and not any(self.executor.orders(iid) for iid in SYMBOLS))
+                and not self.executor.orders(B))
         if flat and self.cash0 is not None:
             self.last_equity, self.equity_at = self.cash() - self.cash0, self.epoch()
-        summary = dict(flat=flat, positions=positions, equity=self.last_equity,
+        actual = self.exchange.get_positions() if self.exchange.is_connected() else None
+        summary = dict(flat=flat, flat_scope="sniper-owned B delta restored to zero",
+                       baseline_positions=self.baseline_positions, baseline_B=self.baseline_b,
+                       owned_positions=positions, actual_positions=actual, equity=self.last_equity,
                        equity_at_epoch=self.equity_at, risk_stopped=self.risk_stopped,
                        unresolved=self.executor.unresolved)
         self.journal.emit("session_end", **summary)

@@ -68,10 +68,14 @@ class LimitedExchange:
     """
 
     def __init__(self, exchange, *, max_outstanding_volume=200,
-                 max_updates_per_second=25, limiter=None):
+                 max_updates_per_second=25, position_limit=100, limiter=None):
         self._exchange = exchange
         self.max_outstanding_volume = _lots(
             max_outstanding_volume, name='max_outstanding_volume')
+        # This is the exchange's absolute per-instrument pre-trade limit, not a
+        # strategy target. Keep the final guard here so an oversized quote or a
+        # future strategy configuration cannot bypass it.
+        self.position_limit = _lots(position_limit, name='position_limit')
         self._limiter = limiter if limiter is not None else UpdateRateLimiter(
             max_updates=max_updates_per_second)
 
@@ -92,12 +96,47 @@ class LimitedExchange:
                 f'{instrument_id}: outstanding volume would be {total} lots; '
                 f'limit is {self.max_outstanding_volume}')
 
+    def _position(self, instrument_id):
+        positions = self._exchange.get_positions()
+        if not isinstance(positions, Mapping) or instrument_id not in positions:
+            raise RuntimeError(f'{instrument_id}: cannot verify position')
+        try:
+            position = operator.index(positions[instrument_id])
+        except TypeError:
+            raise ValueError(f'{instrument_id}: position must be an integer') from None
+        if isinstance(positions[instrument_id], bool):
+            raise ValueError(f'{instrument_id}: position must be an integer')
+        return position
+
+    def _check_worst_position(self, instrument_id, side, orders, new_volume,
+                              *, replaced_order_id=None):
+        """Check position plus every same-side resting lot, without netting.
+
+        Reading orders before position makes a concurrent same-side fill
+        conservative: the filled lot can be counted in both snapshots, which
+        may postpone an order but cannot permit an unsafe one.
+        """
+        same_side = sum(
+            order.volume for order_id, order in orders.items()
+            if order.side == side and order_id != replaced_order_id
+        )
+        position = self._position(instrument_id)
+        worst = (position + same_side + new_volume if side == 'bid'
+                 else position - same_side - new_volume)
+        breached = (worst > self.position_limit if side == 'bid'
+                    else worst < -self.position_limit)
+        if breached:
+            raise OrderLimitError(
+                f'{instrument_id}: {side} would make worst-case position {worst}; '
+                f'limit is +/-{self.position_limit}')
+
     def insert_order(self, instrument_id, *, price, volume, side, order_type='limit'):
         volume = _lots(volume)
         if side not in ('bid', 'ask') or order_type not in ('limit', 'ioc'):
             raise ValueError('Expected side bid/ask and order_type limit/ioc')
         orders = self._outstanding_orders(instrument_id)
         self._check_total(instrument_id, sum(order.volume for order in orders.values()) + volume)
+        self._check_worst_position(instrument_id, side, orders, volume)
         self._limiter.acquire()
         return self._exchange.insert_order(
             instrument_id, price=price, volume=volume, side=side, order_type=order_type)
@@ -109,6 +148,9 @@ class LimitedExchange:
             raise OrderLimitError(f'{instrument_id}: outstanding order {order_id} not found')
         total = sum(order.volume for order in orders.values()) - orders[order_id].volume + volume
         self._check_total(instrument_id, total)
+        self._check_worst_position(
+            instrument_id, orders[order_id].side, orders, volume,
+            replaced_order_id=order_id)
         self._limiter.acquire()
         return self._exchange.amend_order(instrument_id, order_id=order_id, volume=volume)
 

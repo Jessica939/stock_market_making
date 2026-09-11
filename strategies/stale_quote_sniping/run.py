@@ -18,7 +18,7 @@ from stock_market_making.strategies.common.simulation import SimClock, ReplayExc
 from stock_market_making.strategies.hybrid.state import StateStore
 
 
-VERSION = "stale_quote_sniping_v1"
+VERSION = "stale_quote_sniping_v2"
 
 
 def main(argv=None):
@@ -42,6 +42,11 @@ def main(argv=None):
             raise ValueError("fill-fraction must be in (0,1]")
     except (OSError, ValueError, TypeError, KeyError) as exc:
         parser.error(str(exc))
+    if args.replay:
+        # Historical recordings can contain the old strategy's displayed size.
+        # Live IOC taking has no queue-ahead reason to discard touch liquidity.
+        config = dict(config, depth_reserve_lots=config["replay_depth_reserve_lots"])
+        validate(config)
     settings = BasisSettings(**{key: config[key] for key in BasisSettings.__dataclass_fields__})
     if not args.live and not args.replay:
         print(json.dumps(dict(strategy=VERSION, config=config, basis_model=asdict(settings)), indent=2))
@@ -77,7 +82,8 @@ def main(argv=None):
             armed = True
             exchange.start_recording()
             journal.storage.link_market(exchange.recorder.directory)
-            print(f"{VERSION}: B-only, 2-lot maximum; log: {journal.path}", flush=True)
+            print(f"{VERSION}: B baseline={engine.baseline_b}; "
+                  f"sniper delta limit={config['order_lots']}; log: {journal.path}", flush=True)
             while exchange.is_connected() and engine.clock() < engine.end:
                 engine.step()
                 exchange.sample_market_data()
@@ -137,4 +143,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

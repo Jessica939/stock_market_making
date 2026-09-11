@@ -19,7 +19,7 @@ def load_quote_definitions():
                      ProtectionSettings=protection.ProtectionSettings,
                      RUNS_DIR=DIRECTORY.parents[1]/'data/runs',
                      MARKET_DIR=DIRECTORY.parents[1]/'data/market')
-    notebook = json.loads((DIRECTORY/'strategy_with_logging.ipynb').read_text())
+    notebook = json.loads((DIRECTORY/'strategy_with_logging.ipynb').read_text(encoding='utf-8'))
     for cell in notebook['cells']:
         source = ''.join(cell['source'])
         if source.startswith('TRADE_INSTRUMENTS =') or source.startswith('def calculate_quote('):

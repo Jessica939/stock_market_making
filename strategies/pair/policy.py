@@ -112,6 +112,16 @@ class Policy:
                 max_age_seconds=c.get('max_book_age_seconds', 2.0),
                 max_pair_gap_seconds=c.get('max_pair_time_gap_seconds', .75),
                 max_spread_ticks=self.c['max_spread_ticks'],
+                prior_enabled=c.get('cycle_prior_enabled', False),
+                prior_peak_epoch_seconds=c.get('cycle_prior_peak_epoch_seconds', 165.95),
+                prior_center=c.get('cycle_prior_center', 0.0),
+                prior_amplitude=c.get('cycle_prior_amplitude', 3.1),
+                prior_rmse=c.get('cycle_prior_rmse', 0.9),
+                prior_fit_weight=c.get('cycle_prior_fit_weight', 0.65),
+                prior_fit_r2=c.get('cycle_prior_fit_r2', 0.88),
+                prior_strength=c.get('cycle_prior_strength', 20.0),
+                prior_phase_lock_seconds=c.get('cycle_prior_phase_lock_seconds', 180.0),
+                prior_max_phase_shift_seconds=c.get('cycle_prior_max_phase_shift_seconds', 5.0),
             )
             if cfg.horizon_seconds > self.c['max_hold_seconds']:
                 raise ValueError('cycle_horizon_seconds must not exceed max_hold_seconds')

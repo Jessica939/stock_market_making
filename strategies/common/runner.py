@@ -945,7 +945,8 @@ class Session:
         return summary
 
 
-def main(policy_class, kind, folder, argv=None):
+def main(policy_class, kind, folder, argv=None, *, session_class=Session,
+         prepare_config=None, strategy_validator=None):
     parser = argparse.ArgumentParser(
         description="Active Optibook strategy; demo never connects."
     )
@@ -996,14 +997,6 @@ def main(policy_class, kind, folder, argv=None):
         config.update(supplied)
     if args.duration is not None:
         config["session_seconds"] = args.duration
-    try:
-        validate_config(config)
-    except (ValueError, TypeError) as exc:
-        parser.error(str(exc))
-    if not 0 < args.fill_fraction <= 1:
-        parser.error("fill-fraction must be in (0,1]")
-    if args.mode == "replay" and not args.replay:
-        parser.error("--replay is required in replay mode")
     if kind == "pair":
         # Keep a short engineering smoke run constructible. The common 120s
         # closeout guard still disables every entry in such a short session.
@@ -1013,6 +1006,18 @@ def main(policy_class, kind, folder, argv=None):
         config.setdefault(
             "liquidation_buffer_seconds", min(60.0, config["entry_cutoff_seconds"] / 2)
         )
+    if prepare_config is not None:
+        prepare_config(config)
+    try:
+        validate_config(config)
+        if strategy_validator is not None:
+            strategy_validator(config)
+    except (ValueError, TypeError) as exc:
+        parser.error(str(exc))
+    if not 0 < args.fill_fraction <= 1:
+        parser.error("fill-fraction must be in (0,1]")
+    if args.mode == "replay" and not args.replay:
+        parser.error("--replay is required in replay mode")
     try:
         policy = policy_class(config)
     except (ValueError, TypeError) as exc:
@@ -1058,7 +1063,7 @@ def main(policy_class, kind, folder, argv=None):
                 )
             exchange.start_recording()
             journal.storage.link_market(exchange.recorder.directory)
-            session = Session(
+            session = session_class(
                 policy,
                 kind,
                 exchange,
@@ -1123,7 +1128,7 @@ def main(policy_class, kind, folder, argv=None):
                         lambda: first_epoch + clock.now,
                         journal=journal,
                     )
-                    session = Session(
+                    session = session_class(
                         policy,
                         kind,
                         exchange,

@@ -11,7 +11,27 @@ CyclePosition = importlib.import_module(PACKAGE + '.cycle_position').CyclePositi
 cycle = importlib.import_module(PACKAGE + '.cycle_signal')
 CycleSettings, apply_cycle_quote = cycle.CycleSettings, cycle.apply_cycle_quote
 protect_quote = importlib.import_module(PACKAGE + '.quote_protection').protect_quote
-QuoteManager = importlib.import_module(PACKAGE + '.order_execution').QuoteManager
+execution = importlib.import_module(PACKAGE + '.order_execution')
+QuoteManager = execution.QuoteManager
+LimitedExchange = execution.LimitedExchange
+OrderLimitError = execution.OrderLimitError
+
+
+class FakeExchange:
+    def __init__(self, position, orders=None):
+        self.position = position
+        self.orders = orders or {}
+        self.inserted = []
+
+    def get_positions(self):
+        return {'PHILIPS_A': self.position}
+
+    def get_outstanding_orders(self, instrument_id):
+        return self.orders
+
+    def insert_order(self, instrument_id, **order):
+        self.inserted.append((instrument_id, order))
+        return NS(success=True)
 
 
 class CyclePositionTests(unittest.TestCase):
@@ -76,6 +96,38 @@ class CyclePositionTests(unittest.TestCase):
     def test_half_cycle_horizon_supported_but_not_longer(self):
         self.assertEqual(CycleSettings(horizon_seconds=90).horizon_seconds,90)
         with self.assertRaises(ValueError):CycleSettings(horizon_seconds=91)
+
+
+class PreTradePositionLimitTests(unittest.TestCase):
+    def test_existing_short_position_is_deducted_from_ask_capacity(self):
+        raw = FakeExchange(position=-10)
+        exchange = LimitedExchange(raw, position_limit=100)
+        with self.assertRaises(OrderLimitError):
+            exchange.insert_order(
+                'PHILIPS_A', price=100, volume=100, side='ask', order_type='limit')
+        self.assertEqual(raw.inserted, [])
+        exchange.insert_order(
+            'PHILIPS_A', price=100, volume=90, side='ask', order_type='limit')
+        self.assertEqual(raw.inserted[0][1]['volume'], 90)
+
+    def test_same_side_resting_orders_are_also_deducted(self):
+        orders = {1: NS(side='ask', price=101, volume=20)}
+        raw = FakeExchange(position=-10, orders=orders)
+        exchange = LimitedExchange(raw, position_limit=100)
+        with self.assertRaises(OrderLimitError):
+            exchange.insert_order(
+                'PHILIPS_A', price=102, volume=71, side='ask', order_type='limit')
+        exchange.insert_order(
+            'PHILIPS_A', price=102, volume=70, side='ask', order_type='limit')
+
+    def test_reducing_side_is_not_blocked_for_inherited_limit_breach(self):
+        raw = FakeExchange(position=110)
+        exchange = LimitedExchange(raw, position_limit=100)
+        exchange.insert_order(
+            'PHILIPS_A', price=100, volume=5, side='ask', order_type='limit')
+        with self.assertRaises(OrderLimitError):
+            exchange.insert_order(
+                'PHILIPS_A', price=99, volume=1, side='bid', order_type='limit')
 
 
 if __name__=='__main__':
