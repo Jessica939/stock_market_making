@@ -12,6 +12,7 @@ from stock_market_making.strategies.stale_quote_sniping.engine import (
     Engine, SYMBOLS, scaled_entry_size, sized_execution, validate,
 )
 from stock_market_making.strategies.stale_quote_sniping.model import BasisSettings, CausalBasisModel
+from stock_market_making.strategies.stale_quote_sniping.run import _clear_startup_b_orders
 from stock_market_making.strategies.common.execution import ExecutionFault
 from stock_market_making.strategies.common.simulation import ReplayExchange, SimClock
 
@@ -24,6 +25,18 @@ class Journal:
 
     def emit(self, kind, **fields):
         self.events.append((kind, fields))
+
+
+class RunStartupTests(unittest.TestCase):
+    def test_old_b_orders_are_cancelled_without_manual_reconciliation(self):
+        state = {1: object()}
+
+        def cancel(_iid):
+            state.clear()
+
+        exchange = NS(get_outstanding_orders=lambda _iid: dict(state), delete_orders=cancel)
+        self.assertEqual(_clear_startup_b_orders(exchange), 1)
+        self.assertFalse(state)
 
 
 class StaleQuoteTests(unittest.TestCase):
