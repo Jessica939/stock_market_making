@@ -1,1 +1,1 @@
-"""Independent baseline refinement selected by the 2026-09-11 historical replay."""
+"""Aggressive A/B baseline refinement with a shared 200-share net limit."""
