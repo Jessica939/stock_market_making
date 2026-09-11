@@ -5,14 +5,14 @@ from .quote_protection import competitive_price
 
 
 class CyclePosition:
-    def __init__(self, *, target_lots=200, reference_hold_seconds=45,
+    def __init__(self, *, target_lots=100, reference_hold_seconds=45,
                  entry_window_seconds=10, retry_seconds=1, cooldown_seconds=2,
                  take_profit_fraction=.8, take_profit_buffer_ticks=2,
                  stop_ticks=60, stop_confirmation_seconds=3,
                  exit_cross_after_seconds=2, exit_sweep_ticks=10,
                  edge_buffer_ticks=1):
-        if type(target_lots) is not int or not 1 <= target_lots <= 200:
-            raise ValueError('target_lots must be an integer in 1..200')
+        if type(target_lots) is not int or not 1 <= target_lots <= 100:
+            raise ValueError('target_lots must be an integer in 1..100')
         values = (reference_hold_seconds, entry_window_seconds, retry_seconds, cooldown_seconds,
                   take_profit_fraction, take_profit_buffer_ticks, stop_ticks,
                   stop_confirmation_seconds, exit_cross_after_seconds,

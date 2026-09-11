@@ -4,11 +4,11 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ProtectionSettings:
-    max_increasing_volume: int = 200
+    max_increasing_volume: int = 100
 
     def __post_init__(self):
-        if type(self.max_increasing_volume) is not int or not 1 <= self.max_increasing_volume <= 200:
-            raise ValueError('max_increasing_volume must be an integer in 1..200')
+        if type(self.max_increasing_volume) is not int or not 1 <= self.max_increasing_volume <= 100:
+            raise ValueError('max_increasing_volume must be an integer in 1..100')
 
 
 def competitive_price(book, tick, side):

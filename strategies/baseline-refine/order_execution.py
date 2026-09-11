@@ -196,7 +196,7 @@ class QuoteManager:
     sleep; failed or unconfirmed updates never permit replacement that cycle.
     """
 
-    def __init__(self, exchange, *, position_limit=200, soft_limit=200,
+    def __init__(self, exchange, *, position_limit=100, soft_limit=100,
                  net_position_limit=200, net_symbols=('PHILIPS_A', 'PHILIPS_B')):
         self.exchange = exchange
         self.position_limit = _lots(position_limit, name='position_limit')

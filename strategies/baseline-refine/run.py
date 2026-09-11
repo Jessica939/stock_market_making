@@ -63,6 +63,7 @@ def main():
         strategy = load_quote_definitions()
         print(json.dumps(dict(strategy=strategy['STRATEGY_VERSION'],
                               position=strategy['B_POSITION_SETTINGS'],
+                              exchange_position_limit=strategy['EXCHANGE_POSITION_LIMIT'],
                               net_position_limit=strategy['NET_POSITION_LIMIT'],
                               net_position_scope='PHILIPS_A + PHILIPS_B and same-side resting orders',
                               a_entry_volume=strategy['ORDER_VOLUME'],

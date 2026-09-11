@@ -28,16 +28,24 @@ def validate(config):
         "loop_seconds", "max_session_loss", "max_drawdown", "session_seconds",
         "closeout_seconds", "shutdown_grace_seconds", "settlement_seconds",
         "period_seconds", "history_seconds", "warmup_seconds", "sample_seconds",
-        "refit_seconds", "max_gap_seconds",
+        "refit_seconds", "max_gap_seconds", "size_step_ticks",
     ))
+    exit_confirmation = config["exit_confirmation_seconds"]
+    if (isinstance(exit_confirmation, bool)
+            or not isinstance(exit_confirmation, (int, float))
+            or not math.isfinite(exit_confirmation) or exit_confirmation < 0):
+        raise ValueError("exit_confirmation_seconds must be finite and nonnegative")
     for key, low, high in (
-        ("order_lots", 1, 20), ("depth_reserve_lots", 0, 1000),
+        ("order_lots", 1, 50), ("max_order_lots", 1, 50),
+        ("lots_per_step", 1, 50), ("depth_reserve_lots", 0, 1000),
         ("replay_depth_reserve_lots", 0, 1000),
         ("max_sweep_ticks", 0, 20), ("max_updates_per_second", 1, 22),
     ):
         value = config[key]
         if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
             raise ValueError(f"{key} must be integer {low}..{high}")
+    if config["order_lots"] > config["max_order_lots"]:
+        raise ValueError("order_lots must not exceed max_order_lots")
     for key in ("fee_per_lot", "stop_per_share"):
         value = config[key]
         if key == "stop_per_share" and value is None:
@@ -46,8 +54,8 @@ def validate(config):
                 or not math.isfinite(value) or value < 0
                 or (key == "stop_per_share" and value == 0)):
             raise ValueError("invalid " + key)
-    if not config["hold_seconds"] + config["execution_delay_seconds"] < config["closeout_seconds"] < config["session_seconds"]:
-        raise ValueError("require hold + execution delay < closeout < session")
+    if not config["hold_seconds"] + exit_confirmation < config["closeout_seconds"] < config["session_seconds"]:
+        raise ValueError("require hold + exit confirmation < closeout < session")
     if config["loop_seconds"] < 0.2 or config["settlement_seconds"] > 30:
         raise ValueError("loop must be >=0.2 seconds and settlement <=30 seconds")
     BasisSettings(**{key: config[key] for key in BasisSettings.__dataclass_fields__})
@@ -164,6 +172,32 @@ def vwap(book, buy, quantity):
     raise UnusableBook("insufficient bounded depth")
 
 
+def scaled_entry_size(edge, tick, config):
+    """Scale only the excess edge above the entry floor, up to a hard cap."""
+    excess_ticks = max(0.0, edge / tick - config["entry_edge_ticks"])
+    steps = math.floor((excess_ticks + 1e-9) / config["size_step_ticks"])
+    return min(config["max_order_lots"],
+               config["order_lots"] + steps * config["lots_per_step"])
+
+
+def sized_execution(book, buy, fair, config):
+    """Find a size whose own VWAP still justifies its edge-based size tier."""
+    sign = 1 if buy else -1
+    base = config["order_lots"]
+    execution = vwap(book, buy, base)
+    edge = sign * (fair - execution)
+    quantity = scaled_entry_size(edge, book["tick"], config)
+    while quantity > base:
+        execution = vwap(book, buy, quantity)
+        edge = sign * (fair - execution)
+        justified = scaled_entry_size(edge, book["tick"], config)
+        if justified >= quantity:
+            break
+        quantity = max(base, justified)
+    execution = vwap(book, buy, quantity)
+    return quantity, execution, sign * (fair - execution)
+
+
 class Feed:
     def __init__(self, exchange, config, epoch, clock):
         self.exchange, self.config, self.epoch, self.clock = exchange, config, epoch, clock
@@ -200,7 +234,7 @@ class Feed:
         if reducing:
             book = bounded_book(object_book(self.exchange.get_last_price_book(B)),
                                 self.ticks[B], self.epoch(), self.config)
-            if book["timestamp"] < self.exit_epoch:
+            if book["timestamp"] <= self.exit_epoch:
                 raise UnusableBook("await post-decision exit book")
             return book
         pending = self.pending
@@ -210,7 +244,7 @@ class Feed:
         sign = pending["sign"]
         predicted_basis = CausalBasisModel.predict_snapshot(pending["model"], self.clock())
         fair = books[A]["mid"] - predicted_basis
-        size = self.config["order_lots"]
+        size = pending["volume"]
         execution = vwap(books[B], sign > 0, size)
         threshold = self.config["entry_edge_ticks"] * books[B]["tick"] + 2 * self.config["fee_per_lot"]
         edge = sign * (fair - execution)
@@ -249,8 +283,9 @@ class Engine:
         self.baseline_b = positions[B]
         self.owned_exchange = OwnedBExchange(exchange, self.baseline_b, baseline_cash)
         execution_config = dict(
-            config, position_limit=config["order_lots"], max_order_lots=config["order_lots"],
-            max_net_lots=config["order_lots"], max_outstanding_volume=200,
+            config, position_limit=config["max_order_lots"],
+            max_order_lots=config["max_order_lots"],
+            max_net_lots=config["max_order_lots"], max_outstanding_volume=200,
             entry_slippage_ticks=config["max_sweep_ticks"],
             exit_slippage_ticks=config["max_sweep_ticks"],
         )
@@ -305,12 +340,12 @@ class Engine:
 
     def request_exit(self, reason, immediate=False):
         if self.exit_reason is None or immediate:
-            delay = 0.0 if immediate else self.config["execution_delay_seconds"]
+            delay = 0.0 if immediate else self.config["exit_confirmation_seconds"]
             self.exit_reason = reason
             self.exit_ready = self.clock() + delay
             self.feed.exit_epoch = 0.0 if immediate else self.epoch() + delay
             self.journal.emit("stale_exit_intent", reason=reason, ready=self.exit_ready,
-                              entry=self.entry)
+                              confirmation_seconds=delay, entry=self.entry)
         self.pending = None
         self.feed.pending = None
 
@@ -331,7 +366,7 @@ class Engine:
             raise ExecutionFault("invalid/reversed strategy clock")
         self.last_clock = now
         positions = self.executor.audit("stale_quote_step")
-        if abs(positions[B]) > self.config["order_lots"] or not self.executor.account_consistent:
+        if abs(positions[B]) > self.config["max_order_lots"] or not self.executor.account_consistent:
             raise ExecutionFault("unowned or inconsistent inventory")
         if self.executor.orders(B):
             raise ExecutionFault("unexpected resting order")
@@ -400,7 +435,7 @@ class Engine:
                 try:
                     realized = equity
                     filled = self.executor.send(B, "bid" if pending["sign"] > 0 else "ask",
-                                                self.config["order_lots"])
+                                                pending["volume"])
                     recheck = pending.get("recheck")
                     self.pending = self.feed.pending = None
                     if filled:
@@ -440,8 +475,12 @@ class Engine:
         if edge + 1e-9 < threshold:
             return
         sign = 1 if long_edge >= short_edge else -1
+        volume, execution, edge = sized_execution(books[B], sign > 0, fair, self.config)
+        if edge + 1e-9 < threshold:
+            return
         delay = self.config["execution_delay_seconds"]
-        self.pending = dict(sign=sign, fair_B=fair, edge=edge, model=signal["model"],
+        self.pending = dict(sign=sign, fair_B=fair, edge=edge, volume=volume,
+                            execution_vwap=execution, model=signal["model"],
                             decided_at=now, ready=now + delay,
                             expires=min(now + delay + self.config["entry_wait_seconds"], self.cutoff))
         self.feed.pending = self.pending

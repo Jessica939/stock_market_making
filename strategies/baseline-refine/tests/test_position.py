@@ -9,7 +9,10 @@ PACKAGE = 'stock_market_making.strategies.baseline-refine'
 load = importlib.import_module(PACKAGE + '.run').load_quote_definitions
 CyclePosition = importlib.import_module(PACKAGE + '.cycle_position').CyclePosition
 cycle = importlib.import_module(PACKAGE + '.cycle_signal')
-QuoteManager = importlib.import_module(PACKAGE + '.order_execution').QuoteManager
+execution = importlib.import_module(PACKAGE + '.order_execution')
+QuoteManager = execution.QuoteManager
+LimitedExchange = execution.LimitedExchange
+OrderLimitError = execution.OrderLimitError
 A, B = 'PHILIPS_A', 'PHILIPS_B'
 
 
@@ -29,38 +32,38 @@ class CyclePositionTests(unittest.TestCase):
 
     def test_full_entry_and_partial_fill_request_all_remaining_target(self):
         first = self.quote(0)
-        self.assertEqual((first['buy_volume'], first['sell_volume']), (200, 0))
+        self.assertEqual((first['buy_volume'], first['sell_volume']), (100, 0))
         self.assertEqual(first['bid_price'], 100)
-        self.assertEqual(self.quote(1, 137)['buy_volume'], 63)
-        self.assertEqual(self.quote(2, 200)['buy_volume'], 0)
+        self.assertEqual(self.quote(1, 37)['buy_volume'], 63)
+        self.assertEqual(self.quote(2, 100)['buy_volume'], 0)
 
     def test_45_seconds_is_not_a_minimum_or_a_deadline(self):
         self.quote(0)
-        self.quote(1, 200)
+        self.quote(1, 100)
         for now in (45, 60, 180, 400):
-            q = self.quote(now, 200)
+            q = self.quote(now, 100)
             self.assertEqual((q['buy_volume'], q['sell_volume']), (0, 0))
             self.assertTrue(q['cycle_position']['hold_reference_elapsed'])
             self.assertEqual(q['cycle_position']['reason'], 'hold_cycle_position')
 
     def test_take_profit_can_exit_before_45_seconds_with_full_position(self):
         self.quote(0)
-        q = self.quote(2, 200, 102.4)
+        q = self.quote(2, 100, 102.4)
         self.assertEqual(q['cycle_position']['reason'], 'cycle_take_profit')
-        self.assertEqual((q['sell_volume'], q['target_position']), (200, 0))
+        self.assertEqual((q['sell_volume'], q['target_position']), (100, 0))
         self.assertAlmostEqual(q['ask_price'], 102.4)
         self.assertTrue(q['reduce_only'])
 
     def test_profit_target_does_not_follow_refits_or_additional_fills(self):
         original = self.quote(0)['cycle_position']['target_price']
         self.signal['predicted_B_change'] = 8
-        q = self.quote(3, 150)
+        q = self.quote(3, 75)
         self.assertEqual(q['cycle_position']['target_price'], original)
         self.assertEqual(q['cycle_position']['hold_reference_at'], 45)
 
     def test_exit_crosses_after_two_seconds_and_timer_survives_partial_fills(self):
         self.quote(0)
-        self.quote(2, 200, 102.4)
+        self.quote(2, 100, 102.4)
         q = self.quote(3, 73, 101)
         self.assertEqual(q['sell_volume'], 73)
         self.assertEqual(q['cycle_position']['exit_mode'], 'improve_best')
@@ -73,40 +76,40 @@ class CyclePositionTests(unittest.TestCase):
     def test_short_entry_and_take_profit_are_symmetric(self):
         self.signal['predicted_B_change'] = -3
         q = self.quote(0)
-        self.assertEqual((q['buy_volume'], q['sell_volume']), (0, 200))
+        self.assertEqual((q['buy_volume'], q['sell_volume']), (0, 100))
         self.assertEqual(q['ask_price'], 100)
-        q = self.quote(3, -200, 97.6)
+        q = self.quote(3, -100, 97.6)
         self.assertEqual(q['cycle_position']['reason'], 'cycle_take_profit')
-        self.assertEqual(q['buy_volume'], 200)
-        q = self.quote(5, -151, 98)
-        self.assertEqual(q['buy_volume'], 151)
+        self.assertEqual(q['buy_volume'], 100)
+        q = self.quote(5, -71, 98)
+        self.assertEqual(q['buy_volume'], 71)
         self.assertAlmostEqual(q['bid_price'], 99.1)
 
     def test_single_spike_and_old_20_tick_stop_do_not_exit(self):
         self.quote(0)
-        self.assertEqual(self.quote(1, 200, 97)['sell_volume'], 0)
-        self.assertEqual(self.quote(2, 200, 93)['sell_volume'], 0)
-        self.assertEqual(self.quote(2.5, 200, 100)['sell_volume'], 0)
+        self.assertEqual(self.quote(1, 100, 97)['sell_volume'], 0)
+        self.assertEqual(self.quote(2, 100, 93)['sell_volume'], 0)
+        self.assertEqual(self.quote(2.5, 100, 100)['sell_volume'], 0)
 
     def test_wider_sustained_stop_latches_until_flat(self):
         self.quote(0)
         for t in (1, 1.5, 2, 2.5, 3, 3.5):
-            self.assertEqual(self.quote(t, 200, 93)['sell_volume'], 0)
-        self.assertEqual(self.quote(4, 200, 93)['cycle_position']['reason'], 'cycle_position_stop')
+            self.assertEqual(self.quote(t, 100, 93)['sell_volume'], 0)
+        self.assertEqual(self.quote(4, 100, 93)['cycle_position']['reason'], 'cycle_position_stop')
         self.assertEqual(self.quote(4.5, 80, 100)['sell_volume'], 80)
         self.assertEqual(self.quote(5, 0)['buy_volume'], 0)
-        self.assertEqual(self.quote(7, 0)['buy_volume'], 200)
+        self.assertEqual(self.quote(7, 0)['buy_volume'], 100)
 
     def test_data_gap_is_not_sustained_stop_evidence(self):
         self.quote(0)
-        self.quote(1, 200, 93)
-        self.assertEqual(self.quote(8, 200, 93)['sell_volume'], 0)
+        self.quote(1, 100, 93)
+        self.assertEqual(self.quote(8, 100, 93)['sell_volume'], 0)
 
     def test_no_fill_retries_one_second_after_window_not_45_seconds(self):
         self.quote(0)
         self.assertEqual(self.quote(10)['buy_volume'], 0)
         self.assertEqual(self.quote(10.5)['buy_volume'], 0)
-        self.assertEqual(self.quote(11)['buy_volume'], 200)
+        self.assertEqual(self.quote(11)['buy_volume'], 100)
 
     def test_build_window_and_inactive_signal_cannot_force_exit(self):
         self.quote(0)
@@ -130,8 +133,8 @@ class CyclePositionTests(unittest.TestCase):
 
     def test_wide_book_does_not_block_existing_exit(self):
         self.quote(0)
-        q = self.quote(1, 200, 104, spread=3)
-        self.assertEqual(q['sell_volume'], 200)
+        q = self.quote(1, 100, 104, spread=3)
+        self.assertEqual(q['sell_volume'], 100)
 
     def test_A_aggressive_sizes_and_non_crossing_prices(self):
         for spread in (.1, .2, .3, 1):
@@ -172,6 +175,12 @@ class Exchange:
         bids=sum(o.volume for orders in self.orders.values() for o in orders.values() if o.side=='bid')
         asks=sum(o.volume for orders in self.orders.values() for o in orders.values() if o.side=='ask')
         assert net+bids<=200 and net-asks>=-200, (net,bids,asks)
+        own_bids=sum(o.volume for o in self.orders[iid].values() if o.side=='bid')
+        own_asks=sum(o.volume for o in self.orders[iid].values() if o.side=='ask')
+        if side == 'bid':
+            assert self.positions[iid]+own_bids<=100, (iid,self.positions[iid],own_bids)
+        else:
+            assert self.positions[iid]-own_asks>=-100, (iid,self.positions[iid],own_asks)
         return NS(success=True,order_id=oid)
 
     def delete_order(self,iid,*,order_id):
@@ -187,7 +196,7 @@ class Exchange:
 
 
 class NetLimitTests(unittest.TestCase):
-    def quote(self, side, volume=200, **extra):
+    def quote(self, side, volume=100, **extra):
         return dict(bid_price=99.9,ask_price=100.1,
                     buy_volume=volume if side=='bid' else 0,
                     sell_volume=volume if side=='ask' else 0,**extra)
@@ -205,10 +214,10 @@ class NetLimitTests(unittest.TestCase):
         oid=x.insert_order(A,price=99.9,volume=60,side='bid').order_id
         manager=QuoteManager(x)
         manager.reconcile(B,self.quote('bid'))
-        self.assertEqual(self.quantity(x,B,'bid'),140)
+        self.assertEqual(self.quantity(x,B,'bid'),100)
         x.fill(A,oid,60)
         manager.reconcile(B,self.quote('bid'))
-        self.assertEqual(self.quantity(x,B,'bid'),140)
+        self.assertEqual(self.quantity(x,B,'bid'),100)
 
     def test_opposite_orders_never_offset_pending_exposure(self):
         x=Exchange({A:100,B:50})
@@ -216,29 +225,29 @@ class NetLimitTests(unittest.TestCase):
         QuoteManager(x).reconcile(B,self.quote('bid'))
         self.assertEqual(self.quantity(x,B,'bid'),50)
 
-    def test_cycle_order_expands_when_other_symbol_releases_reserved_capacity(self):
+    def test_each_symbol_can_reserve_100_with_combined_limit_200(self):
         x=Exchange()
         oid=x.insert_order(A,price=99.9,volume=60,side='bid').order_id
         m=QuoteManager(x)
-        q=self.quote('bid',target_position=200)
+        q=self.quote('bid',target_position=100)
         m.reconcile(B,q)
-        self.assertEqual(self.quantity(x,B,'bid'),140)
+        self.assertEqual(self.quantity(x,B,'bid'),100)
         x.delete_order(A,order_id=oid)
         m.reconcile(B,q)
-        self.assertEqual(self.quantity(x,B,'bid'),200)
+        self.assertEqual(self.quantity(x,B,'bid'),100)
 
     def test_negative_net_limit_is_symmetric(self):
         x=Exchange({A:-100,B:-50})
         QuoteManager(x).reconcile(B,self.quote('ask'))
         self.assertEqual(self.quantity(x,B,'ask'),50)
 
-    def test_A_and_B_cannot_both_reserve_200_bids(self):
+    def test_A_and_B_can_each_reserve_100_bids(self):
         x=Exchange()
         m=QuoteManager(x)
         m.reconcile(B,self.quote('bid'))
         m.reconcile(A,self.quote('bid'))
-        self.assertEqual(self.quantity(x,B,'bid'),200)
-        self.assertEqual(self.quantity(x,A,'bid'),0)
+        self.assertEqual(self.quantity(x,B,'bid'),100)
+        self.assertEqual(self.quantity(x,A,'bid'),100)
 
     def test_full_close_has_no_five_share_cap_and_cannot_cross_flat(self):
         x=Exchange({A:0,B:183})
@@ -271,19 +280,33 @@ class NetLimitTests(unittest.TestCase):
 
     def test_fill_between_order_snapshot_and_position_check_is_not_a_fault(self):
         x=Exchange()
-        oid=x.insert_order(B,price=99.9,volume=200,side='bid').order_id
+        oid=x.insert_order(B,price=99.9,volume=100,side='bid').order_id
         m=QuoteManager(x)
         snapshot=m._orders(B)
-        x.before_positions=lambda:x.fill(B,oid,200)
+        x.before_positions=lambda:x.fill(B,oid,100)
         m._verify(B,snapshot,m._desired(self.quote('bid')),0)
-        self.assertEqual(x.positions[B],200)
+        self.assertEqual(x.positions[B],100)
 
     def test_retries_never_accept_a_real_net_limit_violation(self):
-        x=Exchange({A:150,B:0})
+        x=Exchange({A:100,B:50})
         x.orders[B][1]=NS(side='bid',price=99.9,volume=100)
         m=QuoteManager(x)
         with self.assertRaises(ValueError):
             m._verify(B,m._orders(B),m._desired(self.quote('bid')),0)
+
+    def test_existing_short_position_reduces_new_ask_to_90(self):
+        x=Exchange({A:-10,B:0})
+        QuoteManager(x).reconcile(A,self.quote('ask',100))
+        self.assertEqual(self.quantity(x,A,'ask'),90)
+
+    def test_final_sender_guard_blocks_the_original_minus_110_order(self):
+        x=Exchange({A:-10,B:0})
+        guarded=LimitedExchange(x,position_limit=100)
+        with self.assertRaises(OrderLimitError):
+            guarded.insert_order(A,price=100.1,volume=100,side='ask',order_type='limit')
+        self.assertEqual(self.quantity(x,A,'ask'),0)
+        guarded.insert_order(A,price=100.1,volume=90,side='ask',order_type='limit')
+        self.assertEqual(self.quantity(x,A,'ask'),90)
 
 
 if __name__=='__main__':

@@ -18,7 +18,7 @@ from stock_market_making.strategies.common.simulation import SimClock, ReplayExc
 from stock_market_making.strategies.hybrid.state import StateStore
 
 
-VERSION = "stale_quote_sniping_v2"
+VERSION = "stale_quote_sniping_v3"
 
 
 def main(argv=None):

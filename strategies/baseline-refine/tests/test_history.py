@@ -69,7 +69,7 @@ class BootstrapTests(unittest.TestCase):
         self.assertAlmostEqual(signal['predicted_B_change'], -3, places=8)
         plan = Position(**self.strategy['B_POSITION_SETTINGS'])
         quote = self.strategy['plan_quote'](live[B], 0, .1, B, signal, plan, NOW)
-        self.assertEqual(quote['sell_volume'], 200)
+        self.assertEqual(quote['sell_volume'], 100)
         self.assertEqual(quote['buy_volume'], 0)
 
     def test_absolute_phase_survives_monotonic_origin_and_restart_gap(self):

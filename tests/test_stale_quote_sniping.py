@@ -27,6 +27,10 @@ class Journal:
 class StaleQuoteTests(unittest.TestCase):
     def setUp(self):
         self.config = json.loads((ROOT / "strategies/stale_quote_sniping/config.json").read_text())
+        # Behavioral tests use the original small deterministic size. Aggressive
+        # live defaults are asserted separately and should not weaken invariants.
+        self.config["order_lots"] = 2
+        self.config["max_order_lots"] = 2
         self.clock = SimClock()
         self.exchange = ReplayExchange(SYMBOLS, self.clock, fill_fraction=1)
         self.journal = Journal()
@@ -87,6 +91,15 @@ class StaleQuoteTests(unittest.TestCase):
         self.assertEqual(self.engine.exit_reason, "hold_timeout")
         self.assertEqual(self.exchange.positions["PHILIPS_B"], 2)
         self.frame(6.0)
+        self.engine.step()
+        self.assertEqual(self.exchange.positions["PHILIPS_B"], 0)
+
+    def test_exit_waits_for_new_book_but_not_entry_confirmation_delay(self):
+        self.enter()
+        self.frame(1.0, b_bid=101.0)
+        self.engine.step()
+        self.assertEqual(self.exchange.positions["PHILIPS_B"], 2)
+        self.frame(1.1, b_bid=101.0)
         self.engine.step()
         self.assertEqual(self.exchange.positions["PHILIPS_B"], 0)
 
@@ -154,10 +167,19 @@ class StaleQuoteTests(unittest.TestCase):
         self.assertEqual(summary["baseline_B"], 9)
 
     def test_replay_specification_is_guarded(self):
-        for key, value in (("order_lots", 21), ("hold_seconds", 0.0),
-                           ("entry_edge_ticks", 0.0), ("fee_per_lot", float("nan"))):
+        for key, value in (("order_lots", 51), ("max_order_lots", 51),
+                           ("hold_seconds", 0.0),
+                           ("entry_edge_ticks", 0.0), ("exit_confirmation_seconds", -0.1),
+                           ("fee_per_lot", float("nan"))):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 validate(dict(self.config, **{key: value}))
+
+    def test_virtual_live_defaults_keep_small_edges_and_scale_large_ones(self):
+        config = json.loads((ROOT / "strategies/stale_quote_sniping/config.json").read_text())
+        self.assertEqual(config["entry_edge_ticks"], 3.0)
+        self.assertEqual(config["order_lots"], 2)
+        self.assertEqual(config["max_order_lots"], 50)
+        self.assertEqual(config["exit_confirmation_seconds"], 0.0)
 
 
 class CausalityTests(unittest.TestCase):
