@@ -103,6 +103,13 @@ class Executor:
             value = config.get(key, default)
             if not finite(value) or not 0 < value <= 30:
                 raise ValueError(f'{key} must be finite and in (0, 30]')
+        relaxed = config.get('allow_stable_ioc_settlement', False)
+        if type(relaxed) is not bool:
+            raise ValueError('allow_stable_ioc_settlement must be boolean')
+        quiet = config.get('ioc_stability_seconds', 0.4)
+        if (relaxed and (not finite(quiet) or quiet <= 0
+                or quiet > config.get('settlement_seconds', 0.25))):
+            raise ValueError('ioc_stability_seconds must be finite, positive, and <= settlement_seconds')
         for key, default in (('entry_slippage_ticks', 1), ('exit_slippage_ticks', 3)):
             value = config.get(key, default)
             if not finite(value) or value < 0:
@@ -332,6 +339,8 @@ class Executor:
         started = self.clock()
         last_observation = None
         terminal = None
+        stable_observation = None
+        stable_since = None
         while True:
             after = self.audit('ioc_settlement')
             if any(after[other] != before[other] for other in self.symbols if other != iid):
@@ -352,6 +361,23 @@ class Executor:
                     terminal = evidence
             if terminal is not None and (change > terminal or reported > terminal):
                 self._fault('IOC terminal evidence contradicts fills or positions')
+            # Optibook's live API does not expose a terminal IOC fill count. For
+            # strategies which explicitly opt into its synchronous IOC semantics,
+            # accept a partial/zero result after positions and private fills agree,
+            # the IOC is absent from outstanding orders, and that observation has
+            # remained unchanged for a configured quiet interval. Transport errors
+            # and contradictory account/trade observations still fail closed.
+            if (terminal is None and self.config.get('allow_stable_ioc_settlement', False)
+                    and change == reported):
+                candidate = (change, reported)
+                if candidate != stable_observation:
+                    stable_observation = candidate
+                    stable_since = self.clock()
+                elif self.clock() - stable_since >= self.config.get('ioc_stability_seconds', 0.4):
+                    terminal = change
+            else:
+                stable_observation = None
+                stable_since = None
             observed = (change, reported, terminal)
             if observed != last_observation:
                 if self._pending is not None:
@@ -366,7 +392,9 @@ class Executor:
                 self.journal.emit('ioc_settled', instrument=iid, order_id=oid,
                                   state='filled' if change == volume else 'partial' if change else 'zero_fill',
                                   filled_volume=change, cancelled_volume=volume-change,
-                                  evidence='full_quantity_reconciled' if change == volume else 'terminal_quantity_adapter')
+                                  evidence=('full_quantity_reconciled' if change == volume else
+                                            'terminal_quantity_adapter' if self.terminal_quantity is not None else
+                                            'stable_synchronous_ioc_observation'))
                 return change
             if self.clock() - started >= self.config.get('settlement_seconds', 0.25):
                 if self._pending is not None:

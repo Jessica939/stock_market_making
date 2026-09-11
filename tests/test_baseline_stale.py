@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 import sys
 import unittest
 
@@ -9,6 +10,7 @@ from hybrid_fakes import A, B, Clock, Exchange, Journal
 from stock_market_making.strategies.baseline_stale.engine import CombinedEngine
 from stock_market_making.strategies.baseline_stale.run import load_config
 from stock_market_making.strategies.baseline_refine_loader import load_baseline_refine
+from stock_market_making.strategies.baseline_stale.state import StateError, StateStore
 
 
 class CombinedExchange(Exchange):
@@ -105,6 +107,18 @@ class BaselineStaleTests(unittest.TestCase):
         self.assertEqual(engine.account.positions['pair'][B], 0)
         self.assertEqual(engine.account.positions['mm'][B], 9)
         self.assertEqual(exchange.positions[B], 9)
+
+    def test_crash_marker_blocks_silent_inventory_reassignment(self):
+        config, _stale = load_config()
+        with tempfile.TemporaryDirectory() as directory:
+            state = StateStore(Path(directory) / 'state.json')
+            state.acquire()
+            try:
+                state.invalidate(config)
+                with self.assertRaises(StateError):
+                    state.load(config)
+            finally:
+                state.close()
 
 
 if __name__ == '__main__':

@@ -64,7 +64,7 @@ class CombinedEngine:
 
     def __init__(self, raw, config, stale_config, journal, baseline,
                  *, clock=time.monotonic, sleep=time.sleep, wall=time.time,
-                 price_data_dir=None, terminal_quantity=None):
+                 price_data_dir=None, terminal_quantity=None, restored=None):
         self.raw, self.config, self.journal = raw, config, journal
         self.baseline = baseline
         self.clock, self.sleep, self.wall = clock, sleep, wall
@@ -90,13 +90,13 @@ class CombinedEngine:
                 or any(isinstance(actual[s], bool) or not isinstance(actual[s], int)
                        for s in self.symbols)):
             raise ValueError('cannot adopt startup A/B inventory')
-        restored = dict(
+        ownership = restored or dict(
             positions={'mm': {s: actual[s] for s in self.symbols},
                        'pair': dict.fromkeys(self.symbols, 0)},
             cash={'mm': dict.fromkeys(self.symbols, 0.0),
                   'pair': dict.fromkeys(self.symbols, 0.0)},
         )
-        self.account.initialize(restored)
+        self.account.initialize(ownership)
         self.mm_view = OwnedExchange(self.account, 'mm')
         self.stale_view = StaleView(self.account)
 
@@ -133,7 +133,7 @@ class CombinedEngine:
         self.account.pair_book_reader = self.stale.feed.one
         self.stopping = False
         self.stop_reason = None
-        self.journal.emit('combined_inventory_adopted', baseline_positions=actual,
+        self.journal.emit('combined_inventory_adopted', baseline_positions=ownership['positions']['mm'],
                           stale_positions=dict.fromkeys(self.symbols, 0))
 
     def _books(self):

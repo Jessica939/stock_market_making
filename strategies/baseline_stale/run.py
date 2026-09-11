@@ -2,6 +2,7 @@
 import argparse
 import json
 from pathlib import Path
+import re
 import signal
 import sys
 import time
@@ -14,6 +15,7 @@ from stock_market_making.recording.storage import MARKET_DIR, RUNS_DIR
 from stock_market_making.strategies.common.runner import Journal
 from stock_market_making.strategies.stale_quote_sniping.engine import validate as validate_stale
 from stock_market_making.strategies.baseline_stale.engine import CombinedEngine
+from stock_market_making.strategies.baseline_stale.state import StateStore
 from stock_market_making.strategies.baseline_refine_loader import load_baseline_refine
 
 VERSION = 'baseline_stale_v1'
@@ -49,10 +51,16 @@ def main(argv=None):
     mode.add_argument('--live', action='store_true')
     mode.add_argument('--check', action='store_true')
     parser.add_argument('--config', type=Path)
+    parser.add_argument('--account', default='default',
+                        help='Local state namespace; does not select exchange credentials')
+    parser.add_argument('--state-file', type=Path)
     parser.add_argument('--log-dir', type=Path, default=RUNS_DIR / 'baseline_stale')
     parser.add_argument('--price-data-dir', type=Path, default=MARKET_DIR)
     args = parser.parse_args(argv)
     try:
+        if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', args.account):
+            raise ValueError('account must contain only letters, numbers, underscores or hyphens')
+        args.state_file = args.state_file or ROOT / 'state' / args.account / 'baseline_stale.json'
         config, stale = load_config(args.config)
         baseline = load_baseline_refine()
     except (OSError, ValueError, RuntimeError, KeyError) as exc:
@@ -70,21 +78,28 @@ def main(argv=None):
     journal = Journal(args.log_dir, strategy=VERSION, config=config, stale_config=stale)
     engine = None
     failed = False
+    state = StateStore(args.state_file)
 
     def stop(_signum, _frame):
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, stop)
     try:
+        state.acquire()
+        restored = state.load(config)
         raw.connect()
         engine = CombinedEngine(raw, config, stale, journal, baseline,
-                                price_data_dir=args.price_data_dir)
+                                price_data_dir=args.price_data_dir, restored=restored)
+        state.checkpoint(engine)
         raw.start_recording()
         journal.storage.link_market(raw.recorder.directory)
         journal.emit('settings', strategy_version=VERSION, config=config, stale_config=stale)
         while raw.is_connected() and time.monotonic() < engine.account.deadline:
             try:
+                state.invalidate(config)
                 engine.step()
+                # Resting baseline orders intentionally keep the runtime marker
+                # unrecoverable; only clean shutdown creates a resumable state.
                 if engine.stopping and not any(engine.account.positions['pair'].values()):
                     break
             finally:
@@ -100,13 +115,17 @@ def main(argv=None):
         try:
             if engine is not None:
                 summary = engine.finish('runner_exit')
+                state.checkpoint(engine)
                 failed |= summary['halted'] or not summary['stale_flat']
                 print(json.dumps(summary, ensure_ascii=False))
         finally:
             try:
                 raw.disconnect()
             finally:
-                journal.close()
+                try:
+                    journal.close()
+                finally:
+                    state.close()
     return 2 if failed or journal.failed else 0
 
 

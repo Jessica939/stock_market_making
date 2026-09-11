@@ -128,7 +128,9 @@ def object_book(raw):
 
 def bounded_book(raw, tick, wall, config):
     stamp = book_time(raw)
-    if stamp is None or not 0 <= wall - stamp <= config["max_book_age_seconds"]:
+    # Exchange timestamps are microsecond-rounded while the local wall clock is
+    # floating point; tolerate the same small forward skew as baseline-refine.
+    if stamp is None or not -0.5 <= wall - stamp <= config["max_book_age_seconds"]:
         raise UnusableBook("missing or stale book")
     sides = {}
     for name in ("bids", "asks"):

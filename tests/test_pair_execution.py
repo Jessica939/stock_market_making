@@ -65,6 +65,17 @@ class IOCTests(unittest.TestCase):
                 self.assertEqual(len(x.update_times), sent)
                 self.assertEqual(e._pending['state'], 'unknown')
 
+    def test_opt_in_stable_ioc_observation_accepts_partial_and_zero(self):
+        for fraction, expected in [(0, 0), (.02, 2)]:
+            with self.subTest(fraction=fraction):
+                clock, j, _, x, _, e = fixture(fraction)
+                e.config.update(allow_stable_ioc_settlement=True, ioc_stability_seconds=.4)
+                self.assertEqual(e.send(A, 'bid', 5), expected)
+                self.assertEqual(x.positions[A], expected)
+                self.assertFalse(e.unresolved)
+                self.assertGreaterEqual(clock.now, .4)
+                self.assertEqual(j.rows[-1]['evidence'], 'stable_synchronous_ioc_observation')
+
     def test_late_private_report_is_waited_for_even_with_terminal_proof(self):
         clock, _, _, x, _, e = fixture(.02, terminal=True)
         poll = x.poll_new_trades

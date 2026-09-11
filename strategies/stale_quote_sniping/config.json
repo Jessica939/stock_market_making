@@ -25,6 +25,8 @@
   "closeout_seconds": 30.0,
   "shutdown_grace_seconds": 5.0,
   "settlement_seconds": 0.6,
+  "allow_stable_ioc_settlement": true,
+  "ioc_stability_seconds": 0.4,
   "max_updates_per_second": 20,
   "period_seconds": 180.0,
   "history_seconds": 720.0,
