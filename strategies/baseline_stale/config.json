@@ -7,6 +7,7 @@
   "max_net_lots": 200,
   "max_outstanding_volume": 200,
   "max_updates_per_second": 20,
-  "baseline_b_position_limit": 50,
-  "baseline_b_soft_limit": 50
+  "baseline_b_position_limit": 30,
+  "baseline_b_soft_limit": 30,
+  "stale_b_position_limit": 70
 }

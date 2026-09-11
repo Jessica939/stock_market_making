@@ -22,13 +22,42 @@ from stock_market_making.strategies.baseline_refine_loader import load_baseline_
 VERSION = 'baseline_stale_v1'
 
 
+def step_or_recover(engine, raw, journal):
+    """Run one strategy iteration, recovering only while state is confirmed.
+
+    Unknown insert/cancel outcomes and attribution faults set one of the hard
+    fault flags before raising.  Those exceptions must still reach shutdown.
+    Other exceptions are isolated to one loop after all passive MM orders are
+    cancelled and the shared inventory is successfully audited.
+    """
+    try:
+        engine.step()
+        return True
+    except Exception as exc:
+        if (engine.account.halted or engine.stale.executor.hard_fault
+                or not raw.is_connected()):
+            raise
+        engine.account.cancel_owner('mm')
+        actual = engine.account.audit()
+        detail = traceback.format_exc()
+        journal.emit('combined_step_recovered', error=str(exc),
+                     error_type=type(exc).__name__, traceback=detail,
+                     actual_positions=actual,
+                     baseline_positions=engine.account.positions['mm'].copy(),
+                     stale_positions=engine.account.positions['pair'].copy())
+        print(f'Recovered {type(exc).__name__} in strategy loop; continuing: {exc}',
+              file=sys.stderr, flush=True)
+        return False
+
+
 def load_config(path=None):
     config = json.loads((DIRECTORY / 'config.json').read_text(encoding='utf-8'))
     if path:
         config.update(json.loads(Path(path).read_text(encoding='utf-8')))
     stale_path = DIRECTORY.parent / 'stale_quote_sniping' / 'config.json'
     stale = json.loads(stale_path.read_text(encoding='utf-8'))
-    stale.update(session_seconds=config['session_seconds'],
+    stale.update(max_order_lots=config['stale_b_position_limit'],
+                 session_seconds=config['session_seconds'],
                  closeout_seconds=config['closeout_seconds'],
                  loop_seconds=config['loop_seconds'],
                  max_updates_per_second=config['max_updates_per_second'])
@@ -37,12 +66,16 @@ def load_config(path=None):
         raise ValueError('symbols must be PHILIPS_A, PHILIPS_B')
     for key in ('position_limit', 'max_net_lots', 'max_outstanding_volume',
                 'max_updates_per_second', 'baseline_b_position_limit',
-                'baseline_b_soft_limit'):
+                'baseline_b_soft_limit', 'stale_b_position_limit'):
         value = config[key]
         if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
             raise ValueError(key + ' must be a positive integer')
     if not config['baseline_b_soft_limit'] <= config['baseline_b_position_limit'] <= config['position_limit'] <= 100:
         raise ValueError('invalid baseline B allocation')
+    if (config['stale_b_position_limit'] > config['position_limit']
+            or config['baseline_b_position_limit'] + config['stale_b_position_limit']
+            > config['position_limit']):
+        raise ValueError('combined baseline/stale B allocation exceeds position_limit')
     return config, stale
 
 
@@ -111,14 +144,12 @@ def main(argv=None):
         while raw.is_connected() and time.monotonic() < engine.account.deadline:
             try:
                 state.invalidate(config)
-                engine.step()
+                step_or_recover(engine, raw, journal)
                 # Persist attribution for manual recovery. Resting orders or a
                 # stale position keep it unrecoverable until clean shutdown.
                 if (state.data.get('positions') != engine.account.positions
                         or state.data.get('cash') != engine.account.cash):
                     state.checkpoint(engine)
-                if engine.stopping and not any(engine.account.positions['pair'].values()):
-                    break
             finally:
                 raw.sample_market_data()
                 time.sleep(config['loop_seconds'])

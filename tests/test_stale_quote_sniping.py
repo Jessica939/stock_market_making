@@ -225,7 +225,7 @@ class StaleQuoteTests(unittest.TestCase):
         self.assertEqual(summary["baseline_B"], 9)
 
     def test_replay_specification_is_guarded(self):
-        for key, value in (("order_lots", 51), ("max_order_lots", 51),
+        for key, value in (("order_lots", 51), ("max_order_lots", 101),
                            ("hold_seconds", 0.0),
                            ("loop_seconds", 0.049),
                            ("entry_edge_ticks", 0.0), ("exit_confirmation_seconds", -0.1),

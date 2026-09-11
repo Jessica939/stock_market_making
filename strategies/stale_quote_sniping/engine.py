@@ -45,7 +45,7 @@ def validate(config):
             or not math.isfinite(exit_confirmation) or exit_confirmation < 0):
         raise ValueError("exit_confirmation_seconds must be finite and nonnegative")
     for key, low, high in (
-        ("order_lots", 1, 50), ("max_order_lots", 1, 50),
+        ("order_lots", 1, 50), ("max_order_lots", 1, 100),
         ("lots_per_step", 1, 50), ("depth_reserve_lots", 0, 1000),
         ("replay_depth_reserve_lots", 0, 1000),
         ("max_sweep_ticks", 0, 20), ("max_updates_per_second", 1, 22),
