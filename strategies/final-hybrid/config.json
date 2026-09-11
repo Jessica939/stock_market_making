@@ -34,5 +34,24 @@
   "recording_seconds": 0.5,
   "session_seconds": 1800.0,
   "closeout_seconds": 30.0,
-  "shutdown_grace_seconds": 5.0
+  "shutdown_grace_seconds": 5.0,
+  "max_requests_per_second": 200,
+  "maker_seconds": 0.25,
+  "b_cycle": {
+    "enabled": true,
+    "signal": {
+      "horizon_seconds": 45.0
+    },
+    "position": {
+      "target_lots": 100,
+      "reference_hold_seconds": 45,
+      "entry_window_seconds": 10,
+      "retry_seconds": 1,
+      "cooldown_seconds": 2,
+      "take_profit_fraction": 0.8,
+      "take_profit_buffer_ticks": 2,
+      "stop_ticks": 60,
+      "stop_confirmation_seconds": 3
+    }
+  }
 }

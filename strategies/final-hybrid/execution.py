@@ -12,6 +12,15 @@ class ExecutionFault(RuntimeError):
 
 
 class HybridExchange(LimitedExchange):
+    maker_deadline = None
+    clock = staticmethod(time.monotonic)
+
+    def insert_order(self, instrument_id, **kwargs):
+        self._limiter.acquire()
+        if self.maker_deadline is not None and self.clock() >= self.maker_deadline:
+            raise UnusableBook('maker quote expired during request-budget wait')
+        return super().insert_order(instrument_id, **kwargs)
+
     def insert_ioc(self, planner):
         # Wait on the SAME limiter used for all MM inserts and cancellations.
         # Refresh the decision, inventory and depth only after that wait.
@@ -62,7 +71,19 @@ class HybridExecutor(QuoteManager):
     def reconcile(self, instrument_id, quote):
         if self.halted and quote:
             raise ExecutionFault('unresolved IOC: all inserts disabled')
-        return super().reconcile(instrument_id, quote)
+        self.exchange.maker_deadline = quote.get('valid_until') if quote else None
+        try:
+            return super().reconcile(instrument_id, quote)
+        finally:
+            self.exchange.maker_deadline = None
+
+    def _capacity(self, side, desired, position, instrument_id=None):
+        # A and B each have an independent hard +/-100 guard in the sender.
+        # Their sum cannot exceed +/-200. Re-querying B several times per A
+        # quote adds no stronger constraint; keep the per-symbol fresh checks.
+        if instrument_id not in (None, 'PHILIPS_A', B):
+            raise ValueError('instrument outside final-hybrid scope')
+        return super()._capacity(side, desired, position, instrument_id=None)
 
     def send_ioc(self, planner):
         if self.halted or self.pending is not None:
