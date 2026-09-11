@@ -15,6 +15,7 @@ from collections.abc import Mapping
 import math
 import time
 
+from stock_market_making.order_sides import side_name
 from .market import UnusableBook, ioc_plan
 
 
@@ -195,7 +196,7 @@ class Executor:
             for oid, order in list(raw.items()):
                 if lots(oid) < 0 or getattr(order, 'order_id', oid) != oid:
                     raise ExecutionFault('invalid outstanding order id')
-                side, volume = order.side, lots(order.volume)
+                side, volume = side_name(order.side), lots(order.volume)
                 price = order.price
                 if side not in ('bid', 'ask') or volume <= 0 or not finite(price) or price <= 0:
                     raise ExecutionFault('invalid outstanding order')
@@ -211,7 +212,7 @@ class Executor:
                 raise ExecutionFault('private trade poll must return a list, including when empty')
             for trade in trades:
                 oid, tid, volume = lots(trade.order_id), lots(trade.trade_id), lots(trade.volume)
-                side, price = trade.side, trade.price
+                side, price = side_name(trade.side), trade.price
                 if (oid < 0 or tid < 0 or volume <= 0 or side not in ('bid', 'ask')
                         or not finite(price) or price <= 0
                         or getattr(trade, 'instrument_id', iid) != iid):

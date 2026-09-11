@@ -16,6 +16,16 @@
 
 默认状态文件是 `state/default/baseline_stale.json`，`--account NAME` 可选择隔离的本地状态空间。正常停止会在撤单并确认 stale 归零后保存 baseline 库存。每个交易步骤前先把状态标记为未确认；如果进程异常终止，下次启动会拒绝交易，要求先根据日志和账户手工核对，而不会把可能的 stale 残仓静默归给 baseline。状态文件还有进程锁，不能由两个实例共用。
 
+人工恢复时先取消并确认所有 A/B 挂单，再按照最后一条 `combined_account` 或终端 summary 单独处理 `stale_positions`，使账户实际仓位回到 `baseline_positions`。确认一致后备份并移走不可恢复的状态文件，才可重新启动；不要直接把账户总 B 仓位全部清零，除非也准备关闭 baseline 库存。
+
+如果已经人工处理完仓位，或者明确决定放弃旧的 owner 划分，可以用一次性的 `--adopt-current` 直接从当前账户状态开始。程序会自动备份旧状态，确认没有遗留挂单，并把当前 A/B 全部登记给 baseline；stale 从零开始：
+
+```powershell
+python strategies/baseline_stale/run.py --live --adopt-current
+```
+
+这是显式的所有权重置，不要在仍有无法确认的 stale 残仓时使用。后续正常启动不加该参数。
+
 ## 运行
 
 从项目根目录检查配置，不连接交易所：

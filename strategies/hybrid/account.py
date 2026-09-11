@@ -9,6 +9,7 @@ from types import SimpleNamespace as NS
 import math
 import time
 
+from stock_market_making.order_sides import side_name
 from stock_market_making.strategies.common.execution import RateLimiter
 from stock_market_making.strategies.common.market import UnusableBook, price_band
 from stock_market_making.quote_helpers import external_price_book
@@ -88,31 +89,34 @@ class SharedAccount:
                 self.fault('Private trade stream unavailable')
             for t in trades:
                 oid, tid, v = t.order_id, t.trade_id, t.volume
+                side = side_name(t.side)
                 if (not all(integer(x) and x >= 0 for x in (oid, tid))
-                        or not integer(v) or v <= 0 or t.side not in ('bid', 'ask')
+                        or not integer(v) or v <= 0 or side not in ('bid', 'ask')
                         or not math.isfinite(t.price) or t.price <= 0
                         or getattr(t, 'instrument_id', s) != s):
                     self.fault('Malformed private fill')
-                signature = (oid, t.side, t.price, v)
+                signature = (oid, side, t.price, v)
                 if (s, tid) in self.seen:
                     if self.seen[s, tid] != signature:
                         self.fault('Conflicting duplicate fill')
                     continue
                 order = self.registry.get((s, oid))
-                if (order is None or t.side != order['side'] or order['filled'] + v > order['volume']
-                        or (t.price > order['price'] + 1e-9 if t.side == 'bid'
+                if (order is None or side != order['side'] or order['filled'] + v > order['volume']
+                        or (t.price > order['price'] + 1e-9 if side == 'bid'
                             else t.price < order['price'] - 1e-9)):
                     self.fault('Unattributable or inconsistent fill')
                 self.seen[s, tid] = signature
                 owner = order['owner']
-                sign = 1 if t.side == 'bid' else -1
+                sign = 1 if side == 'bid' else -1
                 order['filled'] += v
                 self.positions[owner][s] += sign * v
                 self.cash[owner][s] -= sign * v * t.price + v * self.config['fee_per_lot']
                 if owner == 'pair':
-                    self.queues[owner, s].append(t)
+                    self.queues[owner, s].append(NS(
+                        instrument_id=s, trade_id=tid, order_id=oid, volume=v,
+                        side=side, price=t.price, timestamp=getattr(t, 'timestamp', None)))
                 self.journal.emit('owned_fill', owner=owner, instrument=s, order_id=oid,
-                                  trade_id=tid, price=t.price, side=t.side, volume=v)
+                                  trade_id=tid, price=t.price, side=side, volume=v)
 
     def audit(self):
         if not self.initialized:
@@ -140,7 +144,11 @@ class SharedAccount:
         result = {}
         for oid, order in list(raw.items()):
             entry = self.registry.get((s, oid))
-            side, price, volume = (getattr(order, key, None) for key in ('side', 'price', 'volume'))
+            raw_side, price, volume = (getattr(order, key, None) for key in ('side', 'price', 'volume'))
+            try:
+                side = side_name(raw_side)
+            except ValueError:
+                side = None
             reason = None
             if not integer(oid) or oid < 0 or getattr(order, 'order_id', oid) != oid:
                 reason = 'invalid order id'

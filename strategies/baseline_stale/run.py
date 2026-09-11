@@ -6,6 +6,7 @@ import re
 import signal
 import sys
 import time
+import traceback
 
 DIRECTORY = Path(__file__).resolve().parent
 ROOT = DIRECTORY.parents[1]
@@ -54,6 +55,8 @@ def main(argv=None):
     parser.add_argument('--account', default='default',
                         help='Local state namespace; does not select exchange credentials')
     parser.add_argument('--state-file', type=Path)
+    parser.add_argument('--adopt-current', action='store_true',
+                        help='Explicitly assign current A/B inventory to baseline and reset stale ownership')
     parser.add_argument('--log-dir', type=Path, default=RUNS_DIR / 'baseline_stale')
     parser.add_argument('--price-data-dir', type=Path, default=MARKET_DIR)
     args = parser.parse_args(argv)
@@ -61,6 +64,8 @@ def main(argv=None):
         if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', args.account):
             raise ValueError('account must contain only letters, numbers, underscores or hyphens')
         args.state_file = args.state_file or ROOT / 'state' / args.account / 'baseline_stale.json'
+        if args.adopt_current and not args.live:
+            raise ValueError('--adopt-current requires --live')
         config, stale = load_config(args.config)
         baseline = load_baseline_refine()
     except (OSError, ValueError, RuntimeError, KeyError) as exc:
@@ -86,11 +91,20 @@ def main(argv=None):
     signal.signal(signal.SIGTERM, stop)
     try:
         state.acquire()
-        restored = state.load(config)
+        if args.adopt_current:
+            archive = state.archive_for_adoption()
+            restored = None
+            journal.emit('ownership_adoption_requested', prior_state_backup=(
+                str(archive) if archive is not None else None))
+        else:
+            restored = state.load(config)
         raw.connect()
         engine = CombinedEngine(raw, config, stale, journal, baseline,
                                 price_data_dir=args.price_data_dir, restored=restored)
         state.checkpoint(engine)
+        if args.adopt_current:
+            journal.emit('ownership_adopted', baseline_positions=engine.account.positions['mm'],
+                         stale_positions=engine.account.positions['pair'])
         raw.start_recording()
         journal.storage.link_market(raw.recorder.directory)
         journal.emit('settings', strategy_version=VERSION, config=config, stale_config=stale)
@@ -98,8 +112,11 @@ def main(argv=None):
             try:
                 state.invalidate(config)
                 engine.step()
-                # Resting baseline orders intentionally keep the runtime marker
-                # unrecoverable; only clean shutdown creates a resumable state.
+                # Persist attribution for manual recovery. Resting orders or a
+                # stale position keep it unrecoverable until clean shutdown.
+                if (state.data.get('positions') != engine.account.positions
+                        or state.data.get('cash') != engine.account.cash):
+                    state.checkpoint(engine)
                 if engine.stopping and not any(engine.account.positions['pair'].values()):
                     break
             finally:
@@ -109,8 +126,11 @@ def main(argv=None):
         pass
     except Exception as exc:
         failed = True
-        journal.emit('combined_fault', error=str(exc))
-        print(str(exc), file=sys.stderr)
+        if engine is not None:
+            engine.account.halted = True
+        detail = traceback.format_exc()
+        journal.emit('combined_fault', error=str(exc), traceback=detail)
+        print(detail, file=sys.stderr)
     finally:
         try:
             if engine is not None:

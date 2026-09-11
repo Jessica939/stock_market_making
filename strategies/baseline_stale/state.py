@@ -4,7 +4,9 @@ import json
 import math
 import os
 from pathlib import Path
+import shutil
 import tempfile
+from datetime import datetime, timezone
 
 
 class StateError(RuntimeError):
@@ -69,6 +71,15 @@ class StateStore:
         self.data = data
         return copy.deepcopy(data)
 
+    def archive_for_adoption(self):
+        """Preserve the prior checkpoint before an explicit ownership reset."""
+        if not self.path.exists():
+            return None
+        stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ')
+        archive = self.path.with_name(self.path.name + '.before-adopt-' + stamp)
+        shutil.copy2(self.path, archive)
+        return archive
+
     def write(self, data):
         if self.lock is None:
             raise StateError('state lock is not held')
@@ -89,7 +100,9 @@ class StateStore:
         self.data = copy.deepcopy(data)
 
     def invalidate(self, config):
-        self.write(dict(version=1, config=config, recoverable=False))
+        data = copy.deepcopy(self.data or {})
+        data.update(version=1, config=config, recoverable=False)
+        self.write(data)
 
     def checkpoint(self, engine):
         actual = engine.account.audit()

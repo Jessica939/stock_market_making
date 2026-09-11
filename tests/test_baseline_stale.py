@@ -18,6 +18,18 @@ class CombinedExchange(Exchange):
         return {s: {'volume': self.positions[s], 'cash': 0.0} for s in (A, B)}
 
 
+class DynamicEnum:
+    """Cap'n Proto-like side: string-comparable but not concatenable."""
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return self.value
+    def __eq__(self, other):
+        return self.value == str(other)
+    def __hash__(self):
+        return hash(self.value)
+
+
 class BaselineStaleTests(unittest.TestCase):
     def make_engine(self):
         clock = Clock()
@@ -119,6 +131,33 @@ class BaselineStaleTests(unittest.TestCase):
                     state.load(config)
             finally:
                 state.close()
+
+    def test_explicit_adoption_archives_old_state(self):
+        config, _stale = load_config()
+        with tempfile.TemporaryDirectory() as directory:
+            state = StateStore(Path(directory) / 'state.json')
+            state.acquire()
+            try:
+                state.invalidate(config)
+                archive = state.archive_for_adoption()
+                self.assertTrue(archive.is_file())
+                self.assertEqual(archive.read_text(encoding='utf-8'),
+                                 state.path.read_text(encoding='utf-8'))
+            finally:
+                state.close()
+
+    def test_capnp_order_and_fill_sides_are_normalized(self):
+        _clock, exchange, _journal, engine = self.make_engine()
+        engine.step()
+        for orders in exchange.orders.values():
+            for order in orders.values():
+                order.side = DynamicEnum(str(order.side))
+        engine.step()  # Existing LIMIT reconciliation must not concatenate the enum.
+
+        oid = next(iter(exchange.orders[A]))
+        exchange.fill(A, oid, 1)
+        engine.account.audit()
+        self.assertEqual(engine.account.positions['mm'][A], 1)
 
 
 if __name__ == '__main__':

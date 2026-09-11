@@ -10,6 +10,8 @@ import math
 import operator
 import time
 
+from stock_market_making.order_sides import side_name
+
 
 class OrderLimitError(ValueError):
     """The proposed order would exceed a configured limit; nothing was sent."""
@@ -122,7 +124,7 @@ class LimitedExchange:
         """
         same_side = sum(
             order.volume for order_id, order in orders.items()
-            if order.side == side and order_id != replaced_order_id
+            if side_name(order.side) == side and order_id != replaced_order_id
         )
         position = self._position(instrument_id)
         worst = (position + same_side + new_volume if side == 'bid'
@@ -272,9 +274,10 @@ class QuoteManager:
         orders = {}
         for order_id, order in raw_orders.items():
             volume = _lots(order.volume, name='outstanding volume', allow_zero=True)
-            if order.side not in ('bid', 'ask'):
+            side = side_name(order.side)
+            if side not in ('bid', 'ask'):
                 raise ValueError('outstanding order side must be bid or ask')
-            orders[order_id] = (order.side, self._price(order.price), volume)
+            orders[order_id] = (side, self._price(order.price), volume)
         return orders
 
     def _position(self, instrument_id):
