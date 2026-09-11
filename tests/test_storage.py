@@ -92,7 +92,8 @@ class StorageTests(unittest.TestCase):
                   RunStorage=RunStorage, StrategyRecorder=logger,
                   PhilipsPriceRecorder=Mock(return_value=Mock(directory=market)),
                   LimitedExchange=lambda raw, **kw: raw, RecordedExchange=lambda raw, rec: raw,
-                  QuoteManager=Mock(), CycleSignal=Mock(), CYCLE_SETTINGS=Settings(),
+                  QuoteManager=Mock(), CycleSignal=Mock(), PositionAgeTracker=Mock(),
+                  CYCLE_SETTINGS=Settings(),
                   B_PROTECTION=Settings(), LOG_DIR=self.root / 'runs', PRICE_DATA_DIR=market.parent,
                   TRADE_INSTRUMENTS={'PHILIPS_A'}, MARKOUT_HORIZONS=(1, 3), STRATEGY_VERSION='test')
         for name in ('POSITION_LIMIT', 'SOFT_LIMIT', 'ORDER_VOLUME', 'VWAP_HALF_LIFE_TICKS',

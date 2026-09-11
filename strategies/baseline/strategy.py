@@ -48,7 +48,9 @@ from stock_market_making.strategies.baseline.cycle_signal import (
 )
 from stock_market_making.recording.record_philips_prices import PhilipsPriceRecorder
 from stock_market_making.recording.storage import MARKET_DIR, RUNS_DIR, RunStorage
-from stock_market_making.strategies.baseline.quote_protection import ProtectionSettings, protect_quote
+from stock_market_making.strategies.baseline.quote_protection import (
+    PositionAgeTracker, ProtectionSettings, protect_quote,
+)
 
 
 # In[ ]:
@@ -82,12 +84,14 @@ SPREAD_MULTIPLIER = 1.0
 MIN_HALF_SPREAD_TICKS = 1.0
 MARKOUT_HORIZONS = (1, 3, 5, 15, 30, 60)
 MARKOUT_TIMEOUT_SECONDS = 90
-STRATEGY_VERSION = 'baseline_cycle_risk_only_v2'
+STRATEGY_VERSION = 'baseline_b_exit_guard_v3'
 CYCLE_PRICE_SHIFT_ENABLED = False
 B_PROTECTION = ProtectionSettings(
-    max_increasing_volume=2, min_half_spread_ticks=3.0,
-    adverse_extra_ticks=1.0, adverse_threshold_ticks=0.5,
-    adverse_size_fraction=0.5,
+    max_increasing_volume=2, max_abs_position=10, min_half_spread_ticks=3.0,
+    min_reducing_half_spread_ticks=3.0, adverse_extra_ticks=1.0,
+    adverse_threshold_ticks=0.5, strong_adverse_threshold_ticks=1.0,
+    adverse_size_fraction=0.5, small_position_limit=10,
+    adverse_min_hold_seconds=2.0,
 )
 
 # 交易规则：每个品种的买卖挂单数量合计；所有品种共用的更新次数。
@@ -209,6 +213,7 @@ def main():
         recorder.event('settings', **run_config)
 
         cycle_model = CycleSignal(CYCLE_SETTINGS)
+        b_position_age = PositionAgeTracker()
         tick_sizes = {iid: info.tick_size for iid, info in instruments.items()}
         last_error_print = -float('inf')
         while exchange.is_connected():
@@ -239,13 +244,15 @@ def main():
                 for instrument_id in trade_ids:
                     tick_size = tick_sizes[instrument_id]
                     book = external_books.get(instrument_id)
+                    position = exchange.get_positions()[instrument_id]
+                    position_age = (b_position_age.observe(position, time.monotonic())
+                                    if instrument_id == 'PHILIPS_B' else None)
                     # Repricing the previous instrument may take time.
                     if not usable_book(book, tick_size, time.time(), CYCLE_SETTINGS):
                         quote_manager.reconcile(instrument_id, None)
                         recorder.event('skip_quote', instrument=instrument_id,
                                        reason='stale, wide or invalid external book')
                         continue
-                    position = exchange.get_positions()[instrument_id]
                     quote = calculate_quote(book, position, tick_size)
                     signal = cycle_model.observe(
                         external_books, tick_sizes, time.monotonic(), time.time()
@@ -256,7 +263,8 @@ def main():
                         apply_price_shift=CYCLE_PRICE_SHIFT_ENABLED
                     )
                     quote = protect_quote(
-                        quote, book, position, tick_size, instrument_id, B_PROTECTION
+                        quote, book, position, tick_size, instrument_id, B_PROTECTION,
+                        position_age=position_age,
                     )
                     if quote is None:
                         quote_manager.reconcile(instrument_id, None)
