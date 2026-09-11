@@ -10,10 +10,9 @@ import math
 import time
 
 from stock_market_making.strategies.common.execution import RateLimiter
-from stock_market_making.strategies.common.market import UnusableBook
+from stock_market_making.strategies.common.market import UnusableBook, price_band
 from stock_market_making.quote_helpers import external_price_book
 from stock_market_making.strategies.baseline.cycle_signal import usable_book, CycleSettings
-from stock_market_making.strategies.defensive.defensive_pricing import price_band
 
 
 class AccountFault(RuntimeError):

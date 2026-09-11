@@ -61,6 +61,7 @@ These are conservative experimental settings, not a demonstrated profitable fit.
 The old log cannot determine new fills or new PnL after prices and sizes change.
 
 The deployment zip is rooted at `your_optiver_workspace` contents. Extract into
-that directory, not into `stock_market_making`. The logger now lives at
-`stock_market_making/recording/trade_logger.py`, so no sibling `common/` directory
-is required. No credentials or historical logs are included.
+that directory, not into `stock_market_making`. Baseline uses the shared passive
+quoting interface in `stock_market_making/strategies/common/quoting.py`, so deploy
+the complete `stock_market_making/` package. No separate sibling `common/`
+directory is required. No credentials or historical logs are included.

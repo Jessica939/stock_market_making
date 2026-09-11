@@ -10,6 +10,7 @@ sys.path.insert(0, str(DIRECTORY.parents[2]))
 from stock_market_making.strategies.common.runner import DEFAULTS, Journal, validate_config
 from stock_market_making.strategies.hybrid.engine import Hybrid
 from stock_market_making.strategies.pair.policy import Policy
+from stock_market_making.strategies.pair.holding import validate_holding_config
 from stock_market_making.strategies.baseline.run import load_strategy
 from stock_market_making.strategies.hybrid.state import StateStore
 from stock_market_making.recording.storage import MARKET_DIR, RUNS_DIR, hybrid_state_path
@@ -22,6 +23,7 @@ def load_config(path=None):
     if path:
         cfg.update(json.loads(Path(path).read_text(encoding='utf-8')))
     validate_config(cfg)
+    validate_holding_config(cfg)
     if cfg['symbols'] != ['PHILIPS_A', 'PHILIPS_B'] or cfg['relation_mode'] != 'cycle':
         raise ValueError('Hybrid requires PHILIPS_A/B in that order and cycle mode')
     for key in ('mm_position_limit', 'mm_soft_limit', 'mm_order_volume', 'pair_position_limit', 'pair_lot_size'):

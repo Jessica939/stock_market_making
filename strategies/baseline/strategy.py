@@ -31,17 +31,18 @@ WORKSPACE_ROOT = find_workspace()
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-# During local development, ``common`` may live in the deployment workspace
-# while this package is edited in a separate checkout. Prefer this file's
-# checkout for stock_market_making imports in that layout.
+# During local development, shared package modules may live in the deployment
+# workspace while this strategy is edited in a separate checkout. Prefer this
+# file's checkout for stock_market_making imports in that layout.
 SOURCE_PACKAGE_PARENT = Path(__file__).resolve().parents[3]
 if ((SOURCE_PACKAGE_PARENT / 'stock_market_making' / 'recording' / 'storage.py').is_file()
         and str(SOURCE_PACKAGE_PARENT) not in sys.path):
     sys.path.insert(0, str(SOURCE_PACKAGE_PARENT))
 
 from stock_market_making.recording.strategy_recording import RecordedExchange, StrategyRecorder
-from stock_market_making.order_execution import LimitedExchange, QuoteManager
-from stock_market_making.quote_helpers import external_price_book
+from stock_market_making.strategies.common.quoting import (
+    LimitedExchange, QuoteManager, external_price_book,
+)
 from stock_market_making.strategies.baseline.cycle_signal import (
     CycleSettings, CycleSignal, usable_book, apply_cycle_quote,
 )

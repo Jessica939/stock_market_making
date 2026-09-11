@@ -5,11 +5,12 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from stock_market_making.strategies.common.execution import Executor, ExecutionFault
-from stock_market_making.strategies.common.runner import DEFAULTS, Feed, Session, validate_config
+from stock_market_making.strategies.common.runner import DEFAULTS, Feed
 from stock_market_making.strategies.common.simulation import ReplayExchange, SimClock
 from stock_market_making.strategies.common.market import UnusableBook
 from stock_market_making.strategies.pair.policy import Policy
-from stock_market_making.strategies.pair.holding import HoldingGuard
+from stock_market_making.strategies.pair.holding import HoldingGuard, validate_holding_config
+from stock_market_making.strategies.pair.session import PairSession
 
 A, B = 'PHILIPS_A', 'PHILIPS_B'
 
@@ -152,9 +153,9 @@ class HoldingTests(unittest.TestCase):
     def session(self):
         policy = Policy(self.config)
         policy.active = dict(self.held, filled=True)
-        session = Session(policy, 'pair', self.x, self.feed, self.config, self.journal,
-                          self.clock.monotonic, self.clock.sleep,
-                          terminal_quantity=self.x.ioc_terminal_quantity)
+        session = PairSession(policy, 'pair', self.x, self.feed, self.config, self.journal,
+                              self.clock.monotonic, self.clock.sleep,
+                              terminal_quantity=self.x.ioc_terminal_quantity)
         session.initialized = session.startup_cancelled = True
         session.baseline = session.peak = 0
         self.x.positions = {A:5,B:-5}
@@ -202,7 +203,7 @@ class HoldingTests(unittest.TestCase):
         for change in [dict(pair_market_grace_seconds=float('nan')),
                        dict(pair_valuation_grace_seconds=5), dict(pair_exit_liquidity_fraction=0)]:
             with self.subTest(change=change), self.assertRaises(ValueError):
-                validate_config(dict(self.config, **change))
+                validate_holding_config(dict(self.config, **change))
 
     def test_lag_observation_expires_and_favorable_overshoot_does_not_stop(self):
         s = self.session()

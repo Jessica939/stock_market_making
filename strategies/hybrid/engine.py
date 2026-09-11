@@ -1,7 +1,7 @@
 """Simultaneous baseline market making and cycle-pair positions, one sender."""
 import time
 
-from stock_market_making.order_execution import QuoteManager
+from stock_market_making.strategies.common.quoting import QuoteManager
 from stock_market_making.strategies.baseline.run import load_strategy
 from stock_market_making.strategies.baseline.cycle_signal import CycleSignal, apply_cycle_quote, usable_book
 from stock_market_making.strategies.pair.policy import Policy

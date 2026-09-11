@@ -1,1 +1,1 @@
-"""Shared, standard-library-only infrastructure for two active strategies."""
+"""Strategy-neutral market data, execution, recording and replay interfaces."""

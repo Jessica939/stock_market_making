@@ -7,9 +7,11 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT.parent))
-from stock_market_making.strategies.common.runner import DEFAULTS, Feed, Session, validate_config
+from stock_market_making.strategies.common.runner import DEFAULTS, Feed, validate_config
 from stock_market_making.strategies.common.simulation import ReplayExchange, SimClock, read_frames
 from stock_market_making.strategies.pair.policy import Policy
+from stock_market_making.strategies.pair.holding import validate_holding_config
+from stock_market_making.strategies.pair.session import PairSession
 
 
 class Journal:
@@ -34,6 +36,7 @@ def run(path, variant):
             if key.startswith('pair_'):
                 del config[key]
     validate_config(config)
+    validate_holding_config(config)
     if variant == 'three_second_controls':
         config['pair_independent_holding'] = False
         config['max_hold_seconds'] = 45
@@ -55,11 +58,11 @@ def run(path, variant):
         if session is None:
             feed = Feed(exchange, config['symbols'], config, clock.monotonic,
                         lambda:first_epoch+clock.now, journal)
-            session = Session(Policy(config), 'pair', exchange, feed, config, journal,
-                              clock.monotonic, clock.sleep,
-                              terminal_quantity=exchange.ioc_terminal_quantity)
+            session = PairSession(Policy(config), 'pair', exchange, feed, config, journal,
+                                  clock.monotonic, clock.sleep,
+                                  terminal_quantity=exchange.ioc_terminal_quantity)
             if variant == 'previous_controls':
-                session._pair_observe = lambda *a, **kw: False
+                session.observe_inventory = lambda *a, **kw: False
         session.step(delayed=True)
         clock.sleep(config['loop_seconds'])
         if session.stop_requested:

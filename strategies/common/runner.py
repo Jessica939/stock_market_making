@@ -13,7 +13,6 @@ from .execution import Executor, ExecutionFault
 from .market import (clean_book, UnusableBook, timestamp_seconds, BoundaryTracker,
                      ioc_plan, validate_market_config)
 from .simulation import ReplayExchange, SimClock, demo_frames, read_frames
-from ..pair.holding import HoldingGuard
 
 
 DEFAULTS = dict(symbols=['PHILIPS_A', 'PHILIPS_B'], session_seconds=1800,
@@ -30,19 +29,6 @@ DEFAULTS = dict(symbols=['PHILIPS_A', 'PHILIPS_B'], session_seconds=1800,
 
 
 def validate_config(config):
-    if type(config.get('pair_independent_holding', False)) is not bool:
-        raise ValueError('pair_independent_holding must be boolean')
-    for key, maximum in (('pair_market_grace_seconds', 5), ('pair_valuation_grace_seconds', 2),
-                         ('pair_recovery_seconds', 2)):
-        value = config.get(key, 0)
-        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 <= value <= maximum:
-            raise ValueError(f'{key} must be finite and in 0..{maximum}')
-    if (config.get('pair_market_grace_seconds', 0) > 0 and
-            config.get('pair_recovery_seconds', 0) >= config['pair_market_grace_seconds']):
-        raise ValueError('pair_recovery_seconds must be shorter than market grace')
-    fraction = config.get('pair_exit_liquidity_fraction', 1.0)
-    if isinstance(fraction, bool) or not isinstance(fraction, (int, float)) or not math.isfinite(fraction) or not 0 < fraction <= 1:
-        raise ValueError('pair_exit_liquidity_fraction must be in (0, 1]')
     if (not isinstance(config['symbols'], (list, tuple)) or len(config['symbols']) != 2
             or len(set(config['symbols'])) != 2 or not all(isinstance(i, str) and i for i in config['symbols'])):
         raise ValueError('exactly two distinct instrument IDs are required')
@@ -326,10 +312,20 @@ class Session:
         self.startup_cancelled = False
         self.stop_requested = False
         self.fatal_error = None
-        self.holding_guard = HoldingGuard(config) if kind == 'pair' else None
-        self.pair_exit_reason = None
         if self.feed.journal is None:
             self.feed.journal = journal
+
+    def before_frame(self, positions):
+        """Strategy hook run after reconciliation and before reading a new frame."""
+        return False
+
+    def observe_inventory(self, positions, *, reason=None, equity=None):
+        """Strategy hook which may consume a cycle while inventory is held."""
+        return False
+
+    def handle_unusable_market(self, error, elapsed):
+        """Strategy hook for bounded observation during a market-data gap."""
+        return False
 
     def _hard_fault(self):
         return bool(getattr(self.executor, 'hard_fault', False))
@@ -355,66 +351,6 @@ class Session:
             return self._cancel_only('deadline_' + phase)
         return self.executor.flatten()
 
-    def _pair_observe(self, positions, reason=None, equity=None):
-        """Return True when observation/latched reduction consumed this step."""
-        if self.holding_guard is None or not any(positions.values()):
-            if self.holding_guard:
-                self.holding_guard.reset()
-            return False
-        if not self.executor.account_consistent:
-            raise ExecutionFault('pair observation requires reconciled inventory')
-        stopping = (self.risk_halt or self.executor.halted or self.journal.failed or
-                    self.clock() >= self.executor.entry_deadline)
-        was_paused = self.holding_guard.blocked_since is not None
-        action = self.holding_guard.evaluate(
-            self.clock(), positions, getattr(self.policy, 'active', None), reason=reason,
-            equity=equity, baseline=self.baseline, peak=self.peak, stopping=stopping)
-        if equity is not None:
-            self.last_equity = equity
-            if self.peak is not None:
-                self.peak = max(self.peak, equity)
-        if action == 'resume':
-            if was_paused:
-                self.journal.emit('pair_market_resumed', positions=positions)
-            return False
-        if action == 'wait':
-            self.pending = None
-            self.journal.emit('pair_market_observation', reason=reason, positions=positions,
-                              elapsed=self.clock()-self.holding_guard.blocked_since,
-                              liquidation_equity=equity, entry_allowed=False)
-            return True
-        self.pending = None
-        self.pair_exit_reason = action
-        if action == 'loss_limit':
-            self.risk_halt = True
-        self.policy._exit(action)
-        self.journal.emit('pair_exit_requested', reason=action, market_reason=reason,
-                          positions=positions, liquidation_equity=equity)
-        self._reduce(action)
-        return True
-
-    def _monitor_pair(self, positions):
-        """Risk-only decision on existing inventory; cannot introduce a new entry."""
-        frame = self.feed.holding_frame()
-        equity = self.feed.liquidation_equity(require_bounded=False)
-        self.last_equity = equity
-        if self.baseline is not None:
-            self.peak = max(self.peak, equity)
-            if equity-self.baseline <= -self.config['max_session_loss'] or self.peak-equity >= self.config['max_drawdown']:
-                self.risk_halt = True
-        self.holding_guard.reset()
-        if self._pair_observe(positions, equity=equity):
-            return
-        decision = self.policy.monitor_cycle_position(frame, positions)
-        self.pending = None
-        self.journal.emit('pair_holding_decision', reason=decision['reason'],
-                          diagnostics=decision['diagnostics'], positions=positions,
-                          liquidation_equity=equity, entry_allowed=False)
-        if not any(decision['targets'].values()):
-            self.pair_exit_reason = decision['reason']
-            self.journal.emit('pair_exit_requested', reason=decision['reason'], positions=positions)
-            self._reduce(decision['reason'])
-
     def step(self, delayed=False):
         elapsed = self.clock() - self.start
         self.cycles += 1
@@ -426,12 +362,8 @@ class Session:
                 self.executor.cancel_all()
                 self.startup_cancelled = True
             positions = self.executor.audit('cycle')
-            if self.pair_exit_reason:
-                if any(positions.values()):
-                    self._reduce(self.pair_exit_reason)
-                    return
-                self.pair_exit_reason = None
-                self.holding_guard.reset()
+            if self.before_frame(positions):
+                return
             if not self.initialized:
                 if any(positions.values()):
                     self.pending = None
@@ -466,7 +398,7 @@ class Session:
                 if positions is not None and not any(positions.values()):
                     self.stop_requested = True
                 return
-            if self._pair_observe(positions, equity=equity):
+            if self.observe_inventory(positions, equity=equity):
                 return
             if delayed and self.pending is not None:
                 decision, reference = self.pending
@@ -498,30 +430,8 @@ class Session:
         except UnusableBook as exc:
             self.pending = None
             self.journal.emit('market_blocked', reason=str(exc))
-            if self.kind == 'pair' and self.initialized:
-                try:
-                    actual = self.executor.positions()
-                    if (any(actual.values()) and self.config.get('pair_independent_holding', False)
-                            and self.config.get('relation_mode') == 'cycle'):
-                        try:
-                            self._monitor_pair(actual)
-                            return
-                        except UnusableBook as monitoring_error:
-                            self.journal.emit('pair_monitor_unavailable', reason=str(monitoring_error))
-                    value = None
-                    if any(actual.values()):
-                        try:
-                            value = self.feed.liquidation_equity()
-                        except UnusableBook:
-                            pass
-                    if self._pair_observe(actual, reason=str(exc), equity=value):
-                        return
-                except ExecutionFault as error:
-                    self.risk_halt = True
-                    self.fatal_error = str(error)
-                    self.journal.emit('execution_halt', error=str(error))
-                    self._cancel_only('observation_account_fault')
-                    return
+            if self.handle_unusable_market(exc, elapsed):
+                return
             # Reset policy learning/entry state across every data gap, including
             # brief wall-only intervals. Never execute this invalid-frame output.
             try:
@@ -630,7 +540,8 @@ class Session:
         return summary
 
 
-def main(policy_class, kind, folder, argv=None):
+def main(policy_class, kind, folder, argv=None, *, session_class=Session,
+         prepare_config=None, strategy_validator=None):
     parser = argparse.ArgumentParser(description='Active Optibook strategy; demo never connects.')
     parser.add_argument('--mode', choices=['demo', 'replay', 'live'], default='demo')
     parser.add_argument('--config', type=Path, help='Optional JSON object overriding documented defaults')
@@ -655,19 +566,18 @@ def main(policy_class, kind, folder, argv=None):
         config.update(supplied)
     if args.duration is not None:
         config['session_seconds'] = args.duration
+    if prepare_config is not None:
+        prepare_config(config)
     try:
         validate_config(config)
+        if strategy_validator is not None:
+            strategy_validator(config)
     except (ValueError, TypeError) as exc:
         parser.error(str(exc))
     if not 0 < args.fill_fraction <= 1:
         parser.error('fill-fraction must be in (0,1]')
     if args.mode == 'replay' and not args.replay:
         parser.error('--replay is required in replay mode')
-    if kind == 'pair':
-        # Keep a short engineering smoke run constructible. The common 120s
-        # closeout guard still disables every entry in such a short session.
-        config.setdefault('entry_cutoff_seconds', min(120.0, config['session_seconds'] / 2))
-        config.setdefault('liquidation_buffer_seconds', min(60.0, config['entry_cutoff_seconds'] / 2))
     try:
         policy = policy_class(config)
     except (ValueError, TypeError) as exc:
@@ -694,8 +604,8 @@ def main(policy_class, kind, folder, argv=None):
                 raise ValueError('configured symbols not currently tradable; check names/opening time')
             exchange.start_recording()
             journal.storage.link_market(exchange.recorder.directory)
-            session = Session(policy, kind, exchange, feed, config, journal, time.monotonic, time.sleep,
-                              started_at=connected_at)
+            session = session_class(policy, kind, exchange, feed, config, journal,
+                                    time.monotonic, time.sleep, started_at=connected_at)
             # Own the sole account connection and cancel inherited orders once.
             session.executor.cancel_all()
             session.startup_cancelled = True
@@ -729,8 +639,9 @@ def main(policy_class, kind, folder, argv=None):
                 if session is None:
                     feed = Feed(exchange, config['symbols'], config, clock.monotonic,
                                 lambda: first_epoch + clock.now, journal=journal)
-                    session = Session(policy, kind, exchange, feed, config, journal, clock.monotonic, clock.sleep,
-                                      terminal_quantity=exchange.ioc_terminal_quantity)
+                    session = session_class(policy, kind, exchange, feed, config, journal,
+                                            clock.monotonic, clock.sleep,
+                                            terminal_quantity=exchange.ioc_terminal_quantity)
                 try:
                     session.step(delayed=True)
                 finally:

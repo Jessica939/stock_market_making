@@ -43,7 +43,7 @@ reconcile the account first. This feature cannot recover attribution retroactive
 for a run that did not save it.
 
 The baseline logger is self-contained under
-`stock_market_making/recording/trade_logger.py`; no sibling `common/` directory
+`stock_market_making/recording/trade_logger.py`; no separate sibling `common/` directory
 is required. This change does not modify baseline/cycle pricing.
 
 Offline regression checks (no Optibook connection):

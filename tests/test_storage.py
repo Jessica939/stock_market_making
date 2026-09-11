@@ -8,8 +8,8 @@ from unittest.mock import Mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from stock_market_making.recording.storage import RunStorage, hybrid_state_path
-from stock_market_making.strategies.common.runner import Journal, main
-from stock_market_making.strategies.pair.policy import Policy
+from stock_market_making.strategies.common.runner import Journal
+from stock_market_making.strategies.pair.run import run as run_pair
 
 
 class StorageTests(unittest.TestCase):
@@ -53,9 +53,8 @@ class StorageTests(unittest.TestCase):
             hybrid_state_path('../escape', root=self.root)
 
     def test_demo_entrypoint_writes_config_and_no_market_link(self):
-        folder = Path(__file__).resolve().parents[1] / 'strategies/pair'
-        result = main(Policy, 'pair', folder, ['--mode', 'demo', '--duration', '121',
-                      '--log-dir', str(self.root / 'runs')])
+        result = run_pair(['--mode', 'demo', '--duration', '121',
+                           '--log-dir', str(self.root / 'runs')])
         self.assertEqual(result, 0)
         manifest = json.loads(next((self.root / 'runs').glob('*/manifest.json')).read_text())
         self.assertEqual(manifest['mode'], 'demo')

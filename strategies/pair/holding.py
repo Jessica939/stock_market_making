@@ -1,4 +1,27 @@
-"""Bounded observation of a confirmed pair, never permission to add inventory."""
+"""Pair-specific holding controls, never permission to add inventory."""
+import math
+
+
+def validate_holding_config(config):
+    """Validate settings owned by the pair holding lifecycle."""
+    if type(config.get('pair_independent_holding', False)) is not bool:
+        raise ValueError('pair_independent_holding must be boolean')
+    for key, maximum in (('pair_market_grace_seconds', 5),
+                         ('pair_valuation_grace_seconds', 2),
+                         ('pair_recovery_seconds', 2)):
+        value = config.get(key, 0)
+        if (isinstance(value, bool) or not isinstance(value, (int, float))
+                or not math.isfinite(value) or not 0 <= value <= maximum):
+            raise ValueError(f'{key} must be finite and in 0..{maximum}')
+    if (config.get('pair_market_grace_seconds', 0) > 0 and
+            config.get('pair_recovery_seconds', 0) >= config['pair_market_grace_seconds']):
+        raise ValueError('pair_recovery_seconds must be shorter than market grace')
+    fraction = config.get('pair_exit_liquidity_fraction', 1.0)
+    if (isinstance(fraction, bool) or not isinstance(fraction, (int, float))
+            or not math.isfinite(fraction) or not 0 < fraction <= 1):
+        raise ValueError('pair_exit_liquidity_fraction must be in (0, 1]')
+
+
 class HoldingGuard:
     def __init__(self, config):
         self.config = config
