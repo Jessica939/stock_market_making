@@ -1,10 +1,32 @@
-# baseline-refine v2
+# baseline-refine v3
 
 A 独立做市 + B 在线正弦周期持仓。按用户 2026-09-11 的实盘复盘要求，改为大单建仓、
-提前止盈、更宽且需要确认的止损，以及持续全量退出。日志版本为 `baseline_refine_v2`。
+提前止盈、更宽且需要确认的止损，以及持续全量退出。日志版本为 `baseline_refine_v3`；新增启动历史初始化。
 
 **45 秒只用于预测和持仓参考，不是强制平仓期限，也不是最短持仓时间。**
 到止盈价可以提前退出；未到止盈价时，即使超过 45 秒也继续持有。异常持仓和确认止损仍独立触发退出。
+
+## 启动即用历史拟合
+
+启动时先读取已有 `data/market/philips_*/prices.csv` 的 A/B 中间价；没有可用拟合时，
+尝试同一交易所连接的 `get_trade_tick_history` 公共成交历史缓存。
+周期固定 180 秒，用历史估计偏移、振幅和相位，然后直接校验当前盘口、生成交易信号。
+**20 条样本与 30 秒跨度可以完全由历史满足，不要求启动后再采集 30 秒。**
+历史覆盖足够时，拟合权重也直接采用历史覆盖，不从启动时重新爬坡。
+
+- 只用启动前最近 720 秒内的数据，最近有效样本距启动不超过 180 秒。
+- 按原始 UTC 时间映射到当前单调时钟，保留真实间隔；不把旧日期的数据平移到今天。
+- CSV 使用同步的 A/B 盘口中间价；成交历史使用相近时间的 A/B 已发生成交价配对，
+  不读取未来价格。成交价比中间价更嘈杂，仍由拟合质量决定权重。
+- 当前盘口无效、不同步，或价差明显偏离拟合时，仍暂缓新增 B 仓位。
+- 历史不可用时保留在线积累作为回退；每 5 秒重读公共历史缓存，直到得到拟合，
+  以兼容连接后缓存稍晚到达的情况。不会重复消费记录器使用的 `poll_new_trade_ticks`。
+- 启动输出和 `cycle_bootstrap` 日志给出来源、样本数、跨度、历史年龄、拟合质量或失败原因。
+  行情/执行异常重置后，下一轮也重新尝试加载历史。
+
+本地不含可运行的 Optibook 客户端，无法确认部署端的历史缓存是否回填连接前成交。
+这里通过可调用接口检测兼容该功能，**不保证交易所一定提供历史**；已有近期行情 CSV 可独立完成初始化。
+昨天的录制文件不能单独保证今天的初始相位。
 
 ## 额度与下单
 
@@ -51,7 +73,7 @@ B 止盈、止损或处理未跟踪仓位时，**一次报价覆盖全部剩余�
 
 ## 运行与部署
 
-将本目录中的 Notebook、`cycle_position.py`、`cycle_signal.py`、`quote_protection.py`、
+将本目录中的 Notebook、`cycle_position.py`、`cycle_signal.py`、**`cycle_history.py`**、`quote_protection.py`、
 `order_execution.py`、`run.py` 一同同步到原部署位置。日志与行情组件仍使用已有的
 `stock_market_making/recording` 和外部 `common/trade_logger.py`。
 
@@ -67,7 +89,7 @@ rtk proxy python3 -B stock_market_making/strategies/baseline-refine/run.py --che
 python stock_market_making/strategies/baseline-refine/run.py --live
 ```
 
-本次只运行离线检查，没有连接交易所。查看启动输出确认版本 `baseline_refine_v2`、
+本次只运行离线检查，没有连接交易所。查看启动输出确认版本 `baseline_refine_v3`、
 `net_position_limit=200` 与 `PHILIPS_A + PHILIPS_B` 口径。
 日志新增冻结止盈价、模型参考价、持仓参考时间、止损确认起点、退出起点与被动/主动退出阶段。
 
@@ -76,10 +98,15 @@ python stock_market_making/strategies/baseline-refine/run.py --live
 ```sh
 rtk proxy python3 -B -m unittest discover -s stock_market_making/strategies/baseline-refine/tests -p 'test_*.py' -q
 rtk proxy python3 -B -m unittest discover -s stock_market_making/analysis/baseline_refine_v2_20260911 -p 'test_*.py' -q
-rtk proxy python3 -B stock_market_making/analysis/baseline_refine_v2_20260911/validate.py
+rtk proxy python3 -B stock_market_making/analysis/baseline_refine_v3_20260911/validate_history.py
 ```
 
-27 项策略/账户额度/成交竞争测试和 3 项有限深度回放测试通过。12 段原已验证完整的行情，
+v3 的 39 项策略、额度、成交竞争和历史初始化测试通过；另做了 22 次真实行情历史启动检查，
+全部成功载入拟合，20 次首轮信号可用，2 次因当前盘口不同步暂缓。见
+[v3 历史启动验证](../../analysis/baseline_refine_v3_20260911/README.md)。
+
+以下是冻结的 v2 验证，不代表 v3 历史启动后的收益：27 项策略/账户额度/成交竞争测试
+和 3 项有限深度回放测试通过。12 段原已验证完整的行情，
 分别使用全部可见深度和 50% 深度，完成 24 次有限深度回放；所有账户净额度和逐笔记账检查通过。
 另通过 12 组前 300 秒截断和未来扰动检查。结果及限制见
 [验证记录](../../analysis/baseline_refine_v2_20260911/README.md)。

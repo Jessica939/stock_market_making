@@ -14,6 +14,7 @@ sys.path.insert(0, str(DIRECTORY.parents[2]))
 def load_quote_definitions():
     """Load the actual parameters and quote function without SDK/logger setup."""
     cycle = importlib.import_module(PACKAGE + '.cycle_signal')
+    importlib.import_module(PACKAGE + '.cycle_history')
     protection = importlib.import_module(PACKAGE + '.quote_protection')
     namespace = dict(math=math, CycleSettings=cycle.CycleSettings,
                      ProtectionSettings=protection.ProtectionSettings,
@@ -66,6 +67,7 @@ def main():
                               net_position_scope='PHILIPS_A + PHILIPS_B and same-side resting orders',
                               a_entry_volume=strategy['ORDER_VOLUME'],
                               horizon_seconds=strategy['CYCLE_SETTINGS'].horizon_seconds,
+                              startup_history='recent recorded midpoints, then public trade history cache',
                               live_dependencies_checked=False), indent=2))
         return
     load_strategy()['main']()
