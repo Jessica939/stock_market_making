@@ -1,5 +1,6 @@
 """Load the isolated baseline-refine strategy; connect only with --live."""
 import argparse
+from dataclasses import asdict
 import importlib
 import json
 import math
@@ -68,6 +69,8 @@ def main():
                               net_position_scope='PHILIPS_A + PHILIPS_B and same-side resting orders',
                               a_entry_volume=strategy['ORDER_VOLUME'],
                               horizon_seconds=strategy['CYCLE_SETTINGS'].horizon_seconds,
+                              cycle_settings=asdict(strategy['CYCLE_SETTINGS']),
+                              online_adaptation='time-ordered period/window selection and issued forecast monitoring',
                               startup_history='recent recorded midpoints, then public trade history cache',
                               live_dependencies_checked=False), indent=2))
         return

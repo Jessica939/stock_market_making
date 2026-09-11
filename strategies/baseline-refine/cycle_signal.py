@@ -1,8 +1,8 @@
-"""Causal A-minus-B cycle estimate and bounded passive quote overlay.
+"""Causal A-minus-B cycle learning, validation and bounded quote overlay.
 
-No exchange calls or external dependencies. A fixed period is a hypothesis;
-amplitude and phase are fitted from recent history and live observations.
-Fit quality controls overlay strength, not a mandatory holdout admission gate.
+The initial period is a hypothesis. Live data updates coefficients and selects
+period/window changes with a trailing validation block and hysteresis.
+No exchange calls or external dependencies.
 """
 from collections import deque
 from dataclasses import dataclass
@@ -30,12 +30,21 @@ class CycleSettings:
     quote_gain: float = 0.5
     max_quote_shift_ticks: float = 3.0
     adverse_size_fraction: float = 0.5
+    adaptive: bool = True
+    min_period_seconds: float = 120.0
+    max_period_seconds: float = 240.0
+    period_step_seconds: float = 5.0
+    fast_history_seconds: float = 360.0
+    period_min_cycles: float = 1.25
+    switch_improvement: float = 0.2
+    switch_confirmations: int = 3
+    switch_cooldown_seconds: float = 30.0
 
     def __post_init__(self):
-        if type(self.enabled) is not bool:
-            raise ValueError('enabled must be boolean')
+        if type(self.enabled) is not bool or type(self.adaptive) is not bool:
+            raise ValueError('enabled and adaptive must be boolean')
         for name in self.__dataclass_fields__:
-            if name == 'enabled':
+            if name in ('enabled', 'adaptive'):
                 continue
             value = getattr(self, name)
             if isinstance(value, bool) or not math.isfinite(value) or value <= 0:
@@ -49,6 +58,16 @@ class CycleSettings:
         if (self.adverse_size_fraction > 1 or self.quote_gain > 1
                 or self.min_amplitude_ticks >= self.max_amplitude_ticks):
             raise ValueError('invalid cycle thresholds')
+        if (not self.min_period_seconds <= self.period_seconds <= self.max_period_seconds
+                or self.horizon_seconds > self.min_period_seconds / 2
+                or self.sample_seconds > self.min_period_seconds / 20
+                or self.period_step_seconds > self.max_period_seconds-self.min_period_seconds
+                or (self.max_period_seconds-self.min_period_seconds) / self.period_step_seconds > 100
+                or self.period_min_cycles < 1
+                or not self.min_fit_seconds <= self.fast_history_seconds <= self.history_seconds
+                or not 0 < self.switch_improvement < 1
+                or type(self.switch_confirmations) is not int):
+            raise ValueError('invalid adaptation settings')
 
 
 def book_time(book):
@@ -119,6 +138,23 @@ class CycleSignal:
         self.bootstrap = {}
         self.seed_pending = False
         self.seed_deadline = -math.inf
+        self.initialized = False
+        self.period_seconds = self.settings.period_seconds
+        self.window_seconds = self.settings.history_seconds
+        self.revision = 0
+        self.pending_candidate = None
+        self.pending_count = 0
+        self.last_switch = -math.inf
+        self.adaptation = dict(state='warming_up', revision=0)
+        self.validation_weight = 1.0
+        self.pending_forecasts = deque()
+        self.forecast_errors = deque()
+        self.forecast_quality = {}
+
+    @property
+    def needs_bootstrap(self):
+        # A degraded live model must learn from live data, not reload old seeds.
+        return not self.initialized
 
     def seed(self, rows, ticks, now, wall, *, source, max_age_seconds=180.0):
         """Fit past (UTC seconds, A-minus-B) samples in the live clock frame.
@@ -166,23 +202,133 @@ class CycleSignal:
         self.__dict__.update(candidate.__dict__)
         return report
 
-    def _x(self, t):
-        angle = 2 * math.pi * ((t - self.origin) % self.settings.period_seconds) / self.settings.period_seconds
+    def _x(self, t, period=None):
+        period = self.period_seconds if period is None else period
+        angle = 2 * math.pi * ((t - self.origin) % period) / period
         return [1.0, math.sin(angle), math.cos(angle)]
 
-    def _predict(self, t, weights):
-        return sum(x * w for x, w in zip(self._x(t), weights))
+    def _predict(self, t, weights, period=None):
+        return sum(x * w for x, w in zip(self._x(t, period), weights))
 
-    def _fit(self, rows):
+    def _fit(self, rows, period=None):
         matrix = [[0.0] * 3 for _ in range(3)]
         rhs = [0.0] * 3
         for t, y in rows:
-            x = self._x(t)
+            x = self._x(t, period)
             for i in range(3):
                 rhs[i] += x[i] * y
                 for j in range(3):
                     matrix[i][j] += x[i] * x[j]
         return _solve(matrix, rhs)
+
+    def _validate(self, rows, period, window, tick):
+        """Fit only the prefix; score a subsequent horizon-sized block.
+
+        This is model-selection evidence, not an independent backtest. Period
+        search needs at least 1.25 cycles in the training prefix by default.
+        """
+        cfg = self.settings
+        cutoff = rows[-1][0] - cfg.horizon_seconds
+        selected = [(t, y) for t, y in rows if t >= rows[-1][0] - window]
+        train = [(t, y) for t, y in selected if t <= cutoff]
+        holdout = [(t, y) for t, y in selected if t > cutoff]
+        if (len(train) < 20 or len(holdout) < 5
+                or train[-1][0] - train[0][0] < cfg.min_fit_seconds
+                or holdout[-1][0] - holdout[0][0] < cfg.horizon_seconds * .8
+                or (period != self.period_seconds
+                    and train[-1][0] - train[0][0] < cfg.period_min_cycles * period)):
+            return None
+        weights = self._fit(train, period)
+        if weights is None:
+            return None
+        amplitude = math.hypot(weights[1], weights[2])
+        if not cfg.min_amplitude_ticks * tick <= amplitude <= cfg.max_amplitude_ticks * tick:
+            return None
+        mse = sum((y-self._predict(t, weights, period))**2 for t, y in holdout) / len(holdout)
+        baseline_mse = sum((y-train[-1][1])**2 for _, y in holdout) / len(holdout)
+        return dict(period=period, window=window, mse=mse, baseline_mse=baseline_mse,
+                    samples=len(holdout))
+
+    def _adapt(self, rows, now, tick):
+        cfg = self.settings
+        current = self._validate(rows, self.period_seconds, self.window_seconds, tick)
+        self.validation_weight = 1.0
+        self.adaptation = dict(state='disabled' if not cfg.adaptive else 'insufficient_validation',
+                               revision=self.revision)
+        candidates = [current] if current else []
+        if cfg.adaptive:
+            count = int((cfg.max_period_seconds-cfg.min_period_seconds) / cfg.period_step_seconds)
+            periods = sorted({self.period_seconds, cfg.max_period_seconds,
+                              *(cfg.min_period_seconds + i*cfg.period_step_seconds for i in range(count+1))})
+            for window in sorted({cfg.fast_history_seconds, cfg.history_seconds}):
+                for period in periods:
+                    if (period, window) == (self.period_seconds, self.window_seconds):
+                        continue
+                    candidate = self._validate(rows, period, window, tick)
+                    if candidate:
+                        candidates.append(candidate)
+        best = min(candidates, key=lambda c: c['mse']) if candidates else None
+        improvement = (current['mse'] - best['mse']) if current and best else None
+        better = bool(cfg.adaptive and best and
+                      (best['period'], best['window']) != (self.period_seconds, self.window_seconds)
+                      and (current is None or improvement > max(tick*tick, current['mse']*cfg.switch_improvement)))
+        state = 'stable' if current else 'insufficient_validation'
+        if better:
+            key = (best['period'], best['window'])
+            if (self.pending_candidate and key[1] == self.pending_candidate[1]
+                    and abs(key[0]-self.pending_candidate[0]) <= cfg.period_step_seconds):
+                self.pending_count += 1
+            else:
+                self.pending_count = 1
+            self.pending_candidate = key
+            state = 'confirming_change'
+            if now - self.last_switch < cfg.switch_cooldown_seconds:
+                state = 'switch_cooldown'
+            elif self.pending_count >= cfg.switch_confirmations:
+                previous = dict(period_seconds=self.period_seconds, window_seconds=self.window_seconds)
+                self.period_seconds, self.window_seconds = key
+                self.revision += 1
+                self.last_switch = now
+                self.pending_candidate, self.pending_count = None, 0
+                # Old issued forecasts describe the previous regime/model.
+                self.pending_forecasts.clear()
+                self.forecast_errors.clear()
+                self.forecast_quality = {}
+                self.adaptation.update(previous=previous, changed_at=now,
+                                       reason='lower_time_ordered_validation_error')
+                current = best
+                state = 'changed'
+        else:
+            self.pending_candidate, self.pending_count = None, 0
+        self.adaptation.update(state=state if cfg.adaptive else 'disabled', revision=self.revision,
+                               confirmations=self.pending_count, candidate=best)
+        if current:
+            # A constant-spread forecast is the causal comparison baseline.
+            self.validation_weight = max(0.0, min(1.0, 1-current['mse']/max(current['baseline_mse'], tick*tick)))
+            self.adaptation.update(validation_rmse=math.sqrt(current['mse']),
+                                   validation_baseline_rmse=math.sqrt(current['baseline_mse']),
+                                   validation_weight=self.validation_weight)
+
+    def _score_forecasts(self, now, basis, tick):
+        """Verify previously issued forecasts before using this new sample."""
+        cfg = self.settings
+        while self.pending_forecasts and self.pending_forecasts[0][0] <= now:
+            due, prediction, baseline = self.pending_forecasts.popleft()
+            if now - due <= 2*cfg.sample_seconds:
+                self.forecast_errors.append((now, (basis-prediction)**2, (basis-baseline)**2))
+        while self.forecast_errors and now-self.forecast_errors[0][0] > cfg.ramp_seconds:
+            self.forecast_errors.popleft()
+        count = len(self.forecast_errors)
+        self.forecast_quality = dict(forecast_samples=count, forecast_weight=1.0,
+                                    forecast_scope='issued_A_minus_B_forecasts_not_absolute_B')
+        if count:
+            mse = sum(row[1] for row in self.forecast_errors)/count
+            baseline_mse = sum(row[2] for row in self.forecast_errors)/count
+            skill = 1-mse/max(baseline_mse, tick*tick)
+            ready = count >= 10 and now-self.forecast_errors[0][0] >= cfg.min_fit_seconds
+            self.forecast_quality.update(forecast_rmse=math.sqrt(mse),
+                forecast_baseline_rmse=math.sqrt(baseline_mse), forecast_skill=skill,
+                forecast_ready=ready, forecast_weight=max(0.0, min(1.0, skill)) if ready else 1.0)
 
     def _refit(self, now, tick):
         cfg = self.settings
@@ -195,6 +341,8 @@ class CycleSignal:
         if len(rows) < 20 or rows[-1][0] - rows[0][0] < cfg.min_fit_seconds:
             self.reason = 'warmup'
             return
+        self._adapt(rows, now, tick)
+        rows = [(t, y) for t, y in rows if t >= rows[-1][0] - self.window_seconds]
         weights = self._fit(rows)
         if weights is None:
             self.reason = 'singular_fit'
@@ -211,19 +359,29 @@ class CycleSignal:
         self.quality = dict(fit_rmse=math.sqrt(mse), fit_r2=r2,
                             fitted_amplitude=amplitude, fit_samples=len(rows),
                             fit_weight=fit_weight,
+                            fitted_offset=weights[0],
+                            fitted_phase_radians=math.atan2(weights[2], weights[1]),
+                            phase_origin=self.origin,
                             quality_scope='in_sample_fit_not_forecast_accuracy')
         if not cfg.min_amplitude_ticks * tick <= amplitude <= cfg.max_amplitude_ticks * tick:
             self.reason = 'amplitude_out_of_bounds'
             return
         self.weights = weights
+        self.initialized = True
         self.reason = 'active'
 
     def observe(self, books, ticks, now, wall):
         cfg = self.settings
         def result(reason, **extra):
-            return dict(active=False, reason=reason, period_seconds=cfg.period_seconds,
+            out = dict(active=False, reason=reason, period_seconds=self.period_seconds,
+                        window_seconds=self.window_seconds, basis_definition='mid_A_minus_mid_B',
                         horizon_seconds=cfg.horizon_seconds, bootstrap=self.bootstrap,
-                        **self.quality, **extra)
+                        adaptation=dict(self.adaptation), **self.quality,
+                        **self.forecast_quality, **extra)
+            out['in_sample_fit_weight'] = out.get('fit_weight', 0.0)
+            out['fit_weight'] = (out['in_sample_fit_weight'] * self.validation_weight
+                                 * out.get('forecast_weight', 1.0))
+            return out
         if not cfg.enabled:
             return result('disabled')
         if not math.isfinite(now) or not math.isfinite(wall):
@@ -234,7 +392,7 @@ class CycleSignal:
             return result('clock_reversal')
         self.last_now = now
         symbols = ('PHILIPS_A', 'PHILIPS_B')
-        if any(not usable_book(books.get(s), ticks.get(s, 0), wall, cfg) for s in symbols):
+        if any(not usable_book(books.get(s), ticks.get(s, 0), wall, cfg, check_spread=False) for s in symbols):
             return result('invalid_pair_books')
         stamps = tuple(book_time(books[s]) for s in symbols)
         if abs(stamps[0] - stamps[1]) > cfg.max_pair_gap_seconds:
@@ -256,7 +414,10 @@ class CycleSignal:
         mids = [(books[s].bids[0].price + books[s].asks[0].price) / 2 for s in symbols]
         basis = mids[0] - mids[1]
         new = self.stamps is None or all(a > b for a, b in zip(stamps, self.stamps))
+        sampled = False
         if new and now - self.last_sample >= cfg.sample_seconds:
+            sampled = True
+            self._score_forecasts(now, basis, max(tick_pair))
             self.history.append((now, basis))
             self.last_sample = now
             self.stamps = stamps
@@ -269,14 +430,21 @@ class CycleSignal:
             return result(self.reason, samples=len(self.history))
         fitted = self._predict(now, self.weights)
         residual = basis - fitted
+        future = self._predict(now + cfg.horizon_seconds, self.weights)
+        if sampled:
+            self.pending_forecasts.append((now+cfg.horizon_seconds, future, basis))
+        diagnostics = dict(basis=basis, predicted_basis=fitted, residual=residual,
+                           predicted_basis_change=future-fitted,
+                           predicted_B_change=fitted-future, samples=len(self.history))
+        if any(not usable_book(books[s], ticks[s], wall, cfg) for s in symbols):
+            return result('wide_pair_spread', **diagnostics)
         bound = max(3 * max(tick_pair), cfg.residual_sigma * self.quality['fit_rmse'])
         if abs(residual) > bound:
-            return result('residual_shock', residual=residual)
-        change = self._predict(now + cfg.horizon_seconds, self.weights) - fitted
-        return dict(result('active'), active=True, basis=basis, predicted_basis=fitted,
-                    residual=residual, predicted_basis_change=change,
-                    # A-as-reference is explicit: do not invent an absolute A forecast.
-                    predicted_B_change=-change, samples=len(self.history))
+            return result('residual_shock', **diagnostics)
+        if result('active')['fit_weight'] <= 0:
+            return result('forecast_not_better_than_constant', **diagnostics)
+        # A-as-reference is explicit: do not invent an absolute A forecast.
+        return dict(result('active', **diagnostics), active=True)
 
 
 def apply_cycle_quote(quote, book, position, tick, instrument_id, signal, settings, soft_limit,
