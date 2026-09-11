@@ -171,6 +171,7 @@ class StaleQuoteTests(unittest.TestCase):
     def test_replay_specification_is_guarded(self):
         for key, value in (("order_lots", 51), ("max_order_lots", 51),
                            ("hold_seconds", 0.0),
+                           ("loop_seconds", 0.049),
                            ("entry_edge_ticks", 0.0), ("exit_confirmation_seconds", -0.1),
                            ("fee_per_lot", float("nan"))):
             with self.subTest(key=key), self.assertRaises(ValueError):

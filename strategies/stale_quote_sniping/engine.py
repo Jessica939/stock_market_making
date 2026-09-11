@@ -56,8 +56,8 @@ def validate(config):
             raise ValueError("invalid " + key)
     if not config["hold_seconds"] + exit_confirmation < config["closeout_seconds"] < config["session_seconds"]:
         raise ValueError("require hold + exit confirmation < closeout < session")
-    if config["loop_seconds"] < 0.2 or config["settlement_seconds"] > 30:
-        raise ValueError("loop must be >=0.2 seconds and settlement <=30 seconds")
+    if config["loop_seconds"] < 0.05 or config["settlement_seconds"] > 30:
+        raise ValueError("loop must be >=0.05 seconds and settlement <=30 seconds")
     BasisSettings(**{key: config[key] for key in BasisSettings.__dataclass_fields__})
 
 
