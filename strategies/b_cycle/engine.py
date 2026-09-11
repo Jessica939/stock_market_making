@@ -1,13 +1,14 @@
 """Small B-only directional cycle policy using the shared verified IOC sender."""
+
 from datetime import datetime, timezone
 import math
 from types import SimpleNamespace as NS
 
 from ..baseline.cycle_signal import CycleSettings, CycleSignal, book_time
-from ..common.execution import Executor, ExecutionFault
-from ..common.market import UnusableBook
+from ...common.execution import Executor, ExecutionFault
+from ...common.market import UnusableBook
 
-SYMBOLS = ('PHILIPS_A', 'PHILIPS_B')
+SYMBOLS = ("PHILIPS_A", "PHILIPS_B")
 B = SYMBOLS[1]
 
 
@@ -38,75 +39,109 @@ def validate(config):
         raise ValueError('loop must be >=0.2 seconds and settlement <=30 seconds')
 
 
+
+
 def object_book(raw):
     """Support SDK objects and the shared offline ReplayExchange dictionaries."""
-    if raw is None or not isinstance(raw,dict):
+    if raw is None or not isinstance(raw, dict):
         return raw
-    stamp=raw.get('timestamp')
-    if isinstance(stamp,(int,float)):
-        stamp=datetime.fromtimestamp(stamp,timezone.utc)
-    return NS(timestamp=stamp,bids=[NS(price=p,volume=v) for p,v in raw.get('bids',[]) if v>0],
-              asks=[NS(price=p,volume=v) for p,v in raw.get('asks',[]) if v>0])
+    stamp = raw.get("timestamp")
+    if isinstance(stamp, (int, float)):
+        stamp = datetime.fromtimestamp(stamp, timezone.utc)
+    return NS(
+        timestamp=stamp,
+        bids=[NS(price=p, volume=v) for p, v in raw.get("bids", []) if v > 0],
+        asks=[NS(price=p, volume=v) for p, v in raw.get("asks", []) if v > 0],
+    )
 
 
-def bounded_book(raw,tick,wall,config):
-    stamp=book_time(raw)
-    if stamp is None or not 0<=wall-stamp<=config['max_book_age_seconds']:
-        raise UnusableBook('missing or stale book')
-    sides={}
-    for side in ('bids','asks'):
-        levels=getattr(raw,side,None)
+def bounded_book(raw, tick, wall, config):
+    stamp = book_time(raw)
+    if stamp is None or not 0 <= wall - stamp <= config["max_book_age_seconds"]:
+        raise UnusableBook("missing or stale book")
+    sides = {}
+    for side in ("bids", "asks"):
+        levels = getattr(raw, side, None)
         if not levels:
-            raise UnusableBook('two-sided book required')
-        previous=math.inf if side=='bids' else -math.inf
-        clean=[]
+            raise UnusableBook("two-sided book required")
+        previous = math.inf if side == "bids" else -math.inf
+        clean = []
         for level in levels:
-            p,v=level.price,level.volume
-            if (isinstance(p,bool) or not isinstance(p,(int,float)) or not math.isfinite(p) or p<=0
-                    or type(v) is not int or v<=0 or abs(p/tick-round(p/tick))>1e-6
-                    or (p>=previous if side=='bids' else p<=previous)):
-                raise UnusableBook('invalid price levels')
-            clean.append((p,v));previous=p
-        sides[side]=clean
-    bid,ask=sides['bids'][0][0],sides['asks'][0][0]
-    if bid>=ask:
-        raise UnusableBook('crossed book')
-    for side,levels in sides.items():
-        reserve=config['depth_reserve_lots']; bounded=[];touch=levels[0][0]
-        for price,volume in levels:
-            if abs(price-touch)>config['max_sweep_ticks']*tick+1e-8:
+            p, v = level.price, level.volume
+            if (
+                isinstance(p, bool)
+                or not isinstance(p, (int, float))
+                or not math.isfinite(p)
+                or p <= 0
+                or type(v) is not int
+                or v <= 0
+                or abs(p / tick - round(p / tick)) > 1e-6
+                or (p >= previous if side == "bids" else p <= previous)
+            ):
+                raise UnusableBook("invalid price levels")
+            clean.append((p, v))
+            previous = p
+        sides[side] = clean
+    bid, ask = sides["bids"][0][0], sides["asks"][0][0]
+    if bid >= ask:
+        raise UnusableBook("crossed book")
+    for side, levels in sides.items():
+        reserve = config["depth_reserve_lots"]
+        bounded = []
+        touch = levels[0][0]
+        for price, volume in levels:
+            if abs(price - touch) > config["max_sweep_ticks"] * tick + 1e-8:
                 break
-            removed=min(reserve,volume);reserve-=removed;volume-=removed
+            removed = min(reserve, volume)
+            reserve -= removed
+            volume -= removed
             if volume:
-                bounded.append((price,volume))
-        sides[side]=bounded
-    return dict(**sides,bid=bid,ask=ask,mid=(bid+ask)/2,tick=tick,timestamp=stamp)
+                bounded.append((price, volume))
+        sides[side] = bounded
+    return dict(
+        **sides, bid=bid, ask=ask, mid=(bid + ask) / 2, tick=tick, timestamp=stamp
+    )
 
 
-def vwap(book,buy,quantity):
-    left,total=quantity,0.
-    for price,volume in book['asks' if buy else 'bids']:
-        take=min(left,volume);total+=price*take;left-=take
+def vwap(book, buy, quantity):
+    left, total = quantity, 0.0
+    for price, volume in book["asks" if buy else "bids"]:
+        take = min(left, volume)
+        total += price * take
+        left -= take
         if not left:
-            return total/quantity
-    raise UnusableBook('insufficient bounded depth')
+            return total / quantity
+    raise UnusableBook("insufficient bounded depth")
 
 
 class Feed:
-    def __init__(self,exchange,config,epoch,clock):
-        self.exchange,self.config,self.epoch,self.clock=exchange,config,epoch,clock
-        self.instruments=exchange.get_tradable_instruments()
-        self.ticks={i:self.instruments[i].tick_size for i in SYMBOLS}
-        if any(isinstance(t,bool) or not isinstance(t,(int,float)) or not math.isfinite(t) or t<=0 for t in self.ticks.values()):
-            raise ValueError('invalid instrument ticks')
-        self.last_prices={};self.pending=None;self.exit_epoch=0.
+    def __init__(self, exchange, config, epoch, clock):
+        self.exchange, self.config, self.epoch, self.clock = (
+            exchange,
+            config,
+            epoch,
+            clock,
+        )
+        self.instruments = exchange.get_tradable_instruments()
+        self.ticks = {i: self.instruments[i].tick_size for i in SYMBOLS}
+        if any(
+            isinstance(t, bool)
+            or not isinstance(t, (int, float))
+            or not math.isfinite(t)
+            or t <= 0
+            for t in self.ticks.values()
+        ):
+            raise ValueError("invalid instrument ticks")
+        self.last_prices = {}
+        self.pending = None
+        self.exit_epoch = 0.0
 
     def observe(self):
-        raw={}
+        raw = {}
         for i in SYMBOLS:
             for trade in self.exchange.poll_new_trade_ticks(i):
-                self.last_prices[i]=trade.price
-            raw[i]=object_book(self.exchange.get_last_price_book(i))
+                self.last_prices[i] = trade.price
+            raw[i] = object_book(self.exchange.get_last_price_book(i))
         return raw
 
     def one(self,iid,reducing=False,reducing_side=None):
@@ -154,30 +189,42 @@ class Engine:
         self.cash0=None;self.high=0.;self.last_equity=None;self.equity_at=None
 
     def startup(self):
-        positions=self.exchange.get_positions()
-        if not isinstance(positions,dict) or any(type(q) is not int or q!=0 for q in positions.values()):
-            raise ExecutionFault('B cycle requires an entirely flat account at startup')
+        positions = self.exchange.get_positions()
+        if not isinstance(positions, dict) or any(
+            type(q) is not int or q != 0 for q in positions.values()
+        ):
+            raise ExecutionFault("B cycle requires an entirely flat account at startup")
         for iid in self.feed.instruments:
             if self.exchange.get_outstanding_orders(iid):
-                raise ExecutionFault('cancel old strategy orders before starting B cycle')
-        self.executor.audit('b_cycle_startup')
-        self.cash0=self.cash()
+                raise ExecutionFault(
+                    "cancel old strategy orders before starting B cycle"
+                )
+        self.executor.audit("b_cycle_startup")
+        self.cash0 = self.cash()
 
     def cash(self):
-        holdings=self.exchange.get_positions_and_cash()
-        value=holdings[B]['cash']
-        if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value):
-            raise ExecutionFault('B cash unavailable')
+        holdings = self.exchange.get_positions_and_cash()
+        value = holdings[B]["cash"]
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+        ):
+            raise ExecutionFault("B cash unavailable")
         return value
 
-    def request_exit(self,reason,immediate=False):
+    def request_exit(self, reason, immediate=False):
         if self.exit_reason is None or immediate:
-            self.exit_reason=reason
-            delay=0 if immediate else self.config['execution_delay_seconds']
-            self.exit_ready=self.clock()+delay;self.exit_epoch=0. if immediate else self.epoch()+delay
-            self.feed.exit_epoch=self.exit_epoch
-            self.journal.emit('b_exit_intent',reason=reason,ready=self.exit_ready)
-        self.pending=None;self.feed.pending=None
+            self.exit_reason = reason
+            delay = 0 if immediate else self.config["execution_delay_seconds"]
+            self.exit_ready = self.clock() + delay
+            self.exit_epoch = 0.0 if immediate else self.epoch() + delay
+            self.feed.exit_epoch = self.exit_epoch
+            self.journal.emit("b_exit_intent", reason=reason, ready=self.exit_ready)
+        self.pending = None
+        self.feed.pending = None
+
+
 
     def step(self):
         now=self.clock()
@@ -262,22 +309,47 @@ class Engine:
         except UnusableBook as exc:
             self.journal.emit('b_entry_blocked',reason=str(exc))
 
-    def finish(self,live=False):
-        self.stopped=True;self.pending=None;self.feed.pending=None
-        deadline=min(self.clock()+self.config['shutdown_grace_seconds'],self.executor.reduction_deadline)
-        self.executor.reduction_deadline=deadline
+    def finish(self, live=False):
+        self.stopped = True
+        self.pending = None
+        self.feed.pending = None
+        deadline = min(
+            self.clock() + self.config["shutdown_grace_seconds"],
+            self.executor.reduction_deadline,
+        )
+        self.executor.reduction_deadline = deadline
         if live:
-            while self.exchange.is_connected() and not self.executor.unresolved and self.clock()<deadline:
+            while (
+                self.exchange.is_connected()
+                and not self.executor.unresolved
+                and self.clock() < deadline
+            ):
                 if not any(self.executor.positions().values()):
                     break
-                self.request_exit('shutdown',True)
-                self.step();self.sleep(self.config['loop_seconds'])
-        positions=self.executor.audit('b_cycle_finish') if self.exchange.is_connected() else None
-        flat=(positions is not None and not any(positions.values()) and not self.executor.unresolved
-              and not any(self.executor.orders(i) for i in SYMBOLS))
+                self.request_exit("shutdown", True)
+                self.step()
+                self.sleep(self.config["loop_seconds"])
+        positions = (
+            self.executor.audit("b_cycle_finish")
+            if self.exchange.is_connected()
+            else None
+        )
+        flat = (
+            positions is not None
+            and not any(positions.values())
+            and not self.executor.unresolved
+            and not any(self.executor.orders(i) for i in SYMBOLS)
+        )
         if flat and self.cash0 is not None:
-            self.last_equity=self.cash()-self.cash0;self.equity_at=self.epoch()
-        summary=dict(flat=flat,positions=positions,equity=self.last_equity,
-                     equity_at_epoch=self.equity_at,risk_stopped=self.risk_stopped,unresolved=self.executor.unresolved)
-        self.journal.emit('session_end',**summary)
+            self.last_equity = self.cash() - self.cash0
+            self.equity_at = self.epoch()
+        summary = dict(
+            flat=flat,
+            positions=positions,
+            equity=self.last_equity,
+            equity_at_epoch=self.equity_at,
+            risk_stopped=self.risk_stopped,
+            unresolved=self.executor.unresolved,
+        )
+        self.journal.emit("session_end", **summary)
         return summary
