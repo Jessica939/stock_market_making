@@ -1,7 +1,7 @@
 """Causal A-minus-B cycle estimate and bounded passive quote overlay.
 
-No exchange calls, external dependencies, or historic CSV loading. A fixed
-period is a hypothesis; amplitude and phase are fitted on this session.
+No exchange calls or external dependencies. A fixed period is a hypothesis;
+amplitude and phase are fitted from recent history and live observations.
 Fit quality controls overlay strength, not a mandatory holdout admission gate.
 """
 from collections import deque
@@ -116,6 +116,55 @@ class CycleSignal:
         self.weights = None
         self.quality = {}
         self.reason = 'warmup'
+        self.bootstrap = {}
+        self.seed_pending = False
+        self.seed_deadline = -math.inf
+
+    def seed(self, rows, ticks, now, wall, *, source, max_age_seconds=180.0):
+        """Fit past (UTC seconds, A-minus-B) samples in the live clock frame.
+
+        Keep absolute elapsed time: old sessions are never shifted to now.
+        Admission still checks sample coverage, amplitude and the live residual.
+        A rejected seed leaves the current model untouched.
+        """
+        if (not all(math.isfinite(v) for v in (now, wall, max_age_seconds))
+                or max_age_seconds <= 0):
+            return dict(loaded=False, reason='invalid_clock', source=source)
+        cfg = self.settings
+        cleaned = {}
+        for stamp, basis in rows:
+            if (math.isfinite(stamp) and math.isfinite(basis)
+                    and wall - cfg.history_seconds <= stamp <= wall):
+                cleaned[stamp] = basis
+        sampled = []
+        for stamp, basis in sorted(cleaned.items()):
+            if not sampled or stamp - sampled[-1][0] >= cfg.sample_seconds:
+                sampled.append((stamp, basis))
+        report = dict(source=source, samples=len(sampled), loaded=False)
+        if not sampled:
+            return dict(report, reason='no_recent_history')
+        report.update(age_seconds=wall-sampled[-1][0],
+                      span_seconds=sampled[-1][0]-sampled[0][0])
+        if report['age_seconds'] > max_age_seconds:
+            return dict(report, reason='stale_history')
+        candidate = CycleSignal(cfg)
+        candidate.history = deque((now + (stamp-wall), y) for stamp, y in sampled)
+        candidate.origin = candidate.history[0][0]
+        candidate.last_sample = candidate.history[-1][0]
+        candidate.last_now = now
+        candidate.ticks = tuple(ticks[s] for s in ('PHILIPS_A', 'PHILIPS_B'))
+        if any(not math.isfinite(t) or t <= 0 for t in candidate.ticks):
+            return dict(report, reason='invalid_ticks')
+        candidate._refit(now, max(candidate.ticks))
+        report.update(reason=candidate.reason, **candidate.quality)
+        if candidate.weights is None:
+            return report
+        report['loaded'] = True
+        candidate.bootstrap = dict(report)
+        candidate.seed_pending = True
+        candidate.seed_deadline = now + cfg.max_gap_seconds
+        self.__dict__.update(candidate.__dict__)
+        return report
 
     def _x(self, t):
         angle = 2 * math.pi * ((t - self.origin) % self.settings.period_seconds) / self.settings.period_seconds
@@ -173,7 +222,8 @@ class CycleSignal:
         cfg = self.settings
         def result(reason, **extra):
             return dict(active=False, reason=reason, period_seconds=cfg.period_seconds,
-                        horizon_seconds=cfg.horizon_seconds, **self.quality, **extra)
+                        horizon_seconds=cfg.horizon_seconds, bootstrap=self.bootstrap,
+                        **self.quality, **extra)
         if not cfg.enabled:
             return result('disabled')
         if not math.isfinite(now) or not math.isfinite(wall):
@@ -196,7 +246,8 @@ class CycleSignal:
         if self.stamps is not None and any(a < b for a, b in zip(stamps, self.stamps)):
             self.reset()
             return result('book_time_reversal')
-        if now - self.last_sample > cfg.max_gap_seconds:
+        if (now - self.last_sample > cfg.max_gap_seconds
+                and not (self.seed_pending and now <= self.seed_deadline)):
             self.reset()
         self.last_now = now
         self.ticks = tick_pair
@@ -209,6 +260,7 @@ class CycleSignal:
             self.history.append((now, basis))
             self.last_sample = now
             self.stamps = stamps
+            self.seed_pending = False
             while self.history and now - self.history[0][0] > cfg.history_seconds:
                 self.history.popleft()
             if now - self.last_fit >= cfg.refit_seconds:
