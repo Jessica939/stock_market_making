@@ -3,6 +3,7 @@ import argparse
 from dataclasses import asdict
 import json
 from pathlib import Path
+import signal
 import sys
 import time
 
@@ -15,14 +16,27 @@ from stock_market_making.strategies.stale_quote_sniping.engine import Engine, SY
 from stock_market_making.strategies.stale_quote_sniping.model import BasisSettings
 from stock_market_making.strategies.common.runner import Journal
 from stock_market_making.strategies.common.simulation import SimClock, ReplayExchange, read_frames
-from stock_market_making.strategies.hybrid.state import StateStore
 
 
 VERSION = "stale_quote_sniping_v4"
-COMPATIBLE_SAFE_VERSIONS = {
-    "stale_quote_sniping_v1", "stale_quote_sniping_v2",
-    "stale_quote_sniping_v3", VERSION,
-}
+
+
+def _stop_signal(_signum, _frame):
+    raise KeyboardInterrupt
+
+
+def _clear_startup_b_orders(exchange):
+    """Start a fresh virtual-session baseline after removing stale B quotes."""
+    orders = exchange.get_outstanding_orders("PHILIPS_B")
+    if not isinstance(orders, dict):
+        raise ValueError("cannot inspect PHILIPS_B orders at startup")
+    count = len(orders)
+    if count:
+        exchange.delete_orders("PHILIPS_B")
+        remaining = exchange.get_outstanding_orders("PHILIPS_B")
+        if not isinstance(remaining, dict) or remaining:
+            raise ValueError("could not confirm cancellation of startup PHILIPS_B orders")
+    return count
 
 
 def main(argv=None):
@@ -34,7 +48,6 @@ def main(argv=None):
     parser.add_argument("--config", type=Path, default=DIRECTORY / "config.json")
     parser.add_argument("--duration", type=float)
     parser.add_argument("--fill-fraction", type=float, default=0.5)
-    parser.add_argument("--state-file", type=Path, default=ROOT / "state/default/stale_quote_sniping.json")
     parser.add_argument("--log-dir", type=Path, default=ROOT / "data/runs/stale_quote_sniping")
     args = parser.parse_args(argv)
     try:
@@ -62,28 +75,26 @@ def main(argv=None):
     journal.emit("settings", strategy_version=VERSION, config=config,
                  basis_settings=asdict(settings),
                  fill_fraction=None if args.live else args.fill_fraction)
-    exchange = engine = guard = None
+    exchange = engine = None
     summary = {"flat": False}
     error = None
     armed = False
+    if args.live:
+        # Docker/IDE stop commonly sends SIGTERM.  Turn it into the same bounded
+        # closeout path as Ctrl+C.
+        signal.signal(signal.SIGTERM, _stop_signal)
     try:
         if args.live:
-            guard = StateStore(args.state_file)
-            guard.acquire()
-            if guard.path.exists():
-                old = json.loads(guard.path.read_text(encoding="utf-8"))
-                if (old.get("strategy") not in COMPATIBLE_SAFE_VERSIONS
-                        or old.get("safe_to_start") is not True):
-                    raise ValueError("previous sniper run is unconfirmed or risk-stopped; reconcile the account first")
             from optibook.synchronous_client import Exchange
             from stock_market_making.recording.shared_market_recording import RecordingExchange
 
             exchange = RecordingExchange(Exchange(max_nr_trade_history=10000), ROOT / "data/market")
             exchange.connect()
+            cancelled = _clear_startup_b_orders(exchange)
+            if cancelled:
+                journal.emit("startup_orders_cancelled", instrument="PHILIPS_B", count=cancelled)
             engine = Engine(exchange, config, journal, time.monotonic, time.sleep, time.time)
             engine.startup()
-            guard.write(dict(strategy=VERSION, safe_to_start=False, reason="active_run",
-                             run_id=journal.storage.run_id, config=config))
             armed = True
             exchange.start_recording()
             journal.storage.link_market(exchange.recorder.directory)
@@ -129,18 +140,11 @@ def main(argv=None):
                 except Exception as exc:
                     error = error or str(exc)
                     journal.emit("finish_error", error=str(exc))
-            if guard is not None and armed:
-                safe = (summary.get("flat") is True and not summary.get("risk_stopped")
-                        and error is None and not journal.failed)
-                guard.write(dict(strategy=VERSION, safe_to_start=safe, summary=summary,
-                                 error=error, run_id=journal.storage.run_id, config=config))
         finally:
             try:
                 if exchange is not None:
                     exchange.disconnect()
             finally:
-                if guard is not None:
-                    guard.close()
                 journal.close()
     print(json.dumps(dict(summary=summary, error=error), ensure_ascii=False), flush=True)
     return 0 if summary.get("flat") and error is None and not journal.failed else 2

@@ -45,6 +45,6 @@ python -B strategies/stale_quote_sniping/run.py --replay "D:\Jessica\optiver\dat
 python strategies/stale_quote_sniping/run.py --live
 ```
 
-启动允许已有 A/B 仓位，只要求 B 没有遗留挂单。状态文件默认是 `state/default/stale_quote_sniping.json`。运行开始前先写入不可自动重启标记；只有正常结束、确认 sniper 的 B 增量回到零、无执行故障且日志正常时，才允许下次自动启动。未知 IOC、无法确认的部分成交、未恢复到 B 基准或风险停止都要求人工核对账户。
+与 baseline-refine 一样，每次启动都是独立 session，不读取或检查上一次运行的状态文件。启动时先撤销并确认清除已有 B 挂单，再把账户当前 B 仓位作为本次基线；因此手动停止、风险停止或进程异常退出都不会阻止下一次启动，也不需要人工确认状态。Ctrl+C、IDE Stop 和容器 SIGTERM 会先停止入场并尝试平掉本次 sniper 自有的 B 增量。
 
 主要日志事件包括 `stale_signal`、`stale_entry_pending`、`stale_entry_blocked`、`stale_entry_confirmed`、`stale_holding`、`stale_exit_intent`、`stale_exit_cancelled`、`stale_exit_confirmed` 和 `session_end`。入场日志同时保存决策 FV、延迟后 FV、可执行 VWAP、edge 和冻结模型；`stale_exit_cancelled` 保存消失的止盈目标与发送前的最新可执行 VWAP。
