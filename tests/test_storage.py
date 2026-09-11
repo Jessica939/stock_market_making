@@ -1,3 +1,4 @@
+import ast
 import json
 from pathlib import Path
 import sys
@@ -63,15 +64,17 @@ class StorageTests(unittest.TestCase):
         self.assertFalse((self.root / 'market').exists())
 
     def test_baseline_main_links_logger_and_market_before_loop(self):
-        # Execute the actual notebook main with inert adapters; never import a live client.
+        # Execute the actual Python strategy main with inert adapters; never import a live client.
         from dataclasses import asdict, dataclass
         import logging
         from types import ModuleType, SimpleNamespace
         from unittest.mock import patch
-        notebook = json.loads((Path(__file__).resolve().parents[1] /
-                              'strategies/baseline/strategy_with_logging.ipynb').read_text(encoding='utf-8'))
-        source = next(''.join(c['source']) for c in notebook['cells']
-                      if c['cell_type'] == 'code' and ''.join(c['source']).startswith('def main():'))
+        strategy_text = (Path(__file__).resolve().parents[1] /
+                         'strategies/baseline/strategy.py').read_text(encoding='utf-8')
+        tree = ast.parse(strategy_text)
+        main_node = next(node for node in tree.body
+                         if isinstance(node, ast.FunctionDef) and node.name == 'main')
+        source = ast.get_source_segment(strategy_text, main_node)
         exchange = Mock()
         exchange.get_tradable_instruments.return_value = {'PHILIPS_A': SimpleNamespace(tick_size=.1)}
         exchange.is_connected.return_value = False

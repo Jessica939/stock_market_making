@@ -5,7 +5,7 @@ cancellations add events; this adapter never connects, polls trades, or sleeps.
 StrategyRecorder keeps the original TradeLogger JSONL format and sampling logic.
 """
 
-from common.trade_logger import TradeLogger
+from stock_market_making.recording.trade_logger import TradeLogger
 
 
 class StrategyRecorder(TradeLogger):

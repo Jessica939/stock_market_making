@@ -21,11 +21,12 @@ This connects and sends simulated-exchange orders. Only run one team client.
 Check the startup line says `baseline_cycle_risk_only_v2`. Stop the previous
 process before replacing files and restarting. Exit cancels orders; positions remain.
 
-The notebook's tagged definition cells remain the source loaded by `run.py`.
-Use the Python entry point for trading.
+[`strategy.py`](strategy.py) is now the source of truth. `run.py` remains the
+compatible trading entry point used by the baseline and hybrid strategies. The
+old notebook is retained as a historical/reference copy only.
 
 The 180-second cycle and 15-second forecast remain enabled. The v2 experiment
-sets `CYCLE_PRICE_SHIFT_ENABLED=False` in the notebook: the cycle no longer moves
+sets `CYCLE_PRICE_SHIFT_ENABLED=False` in `strategy.py`: the cycle no longer moves
 B's center or fair value. Its weighted, capped, inventory-damped signal is logged
 as `cycle_risk_shift` and still drives the same size reductions and adverse spread
 protection. `cycle_shift` is the actual price shift and is zero in v2. This is a
@@ -35,7 +36,7 @@ from v1. Reducing-side prices also lose the cycle overlay, as part of disabling
 that overlay on both sides; no separate exit delay is introduced.
 
 B protection is
-configured in `B_PROTECTION` in the notebook:
+configured in `B_PROTECTION` in `strategy.py`:
 
 - Without an active cycle signal, B only quotes toward flat. At flat it has no
   resting orders. The executor checks fresh position capacity before inserting.
@@ -60,5 +61,6 @@ These are conservative experimental settings, not a demonstrated profitable fit.
 The old log cannot determine new fills or new PnL after prices and sizes change.
 
 The deployment zip is rooted at `your_optiver_workspace` contents. Extract into
-that directory, not into `stock_market_making`. It includes the current logger and
-baseline runtime dependencies; no credentials or historical logs are included.
+that directory, not into `stock_market_making`. The logger now lives at
+`stock_market_making/recording/trade_logger.py`, so no sibling `common/` directory
+is required. No credentials or historical logs are included.

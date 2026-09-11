@@ -42,8 +42,9 @@ state. Do not delete/edit the checkpoint to bypass a mismatch; preserve it and
 reconcile the account first. This feature cannot recover attribution retroactively
 for a run that did not save it.
 
-The baseline loader still requires the sibling `common/trade_logger.py` directory
-from the original workspace. This change does not modify baseline/cycle pricing.
+The baseline logger is self-contained under
+`stock_market_making/recording/trade_logger.py`; no sibling `common/` directory
+is required. This change does not modify baseline/cycle pricing.
 
 Offline regression checks (no Optibook connection):
 
