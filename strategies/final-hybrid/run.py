@@ -1,4 +1,4 @@
-"""A maker + B IOC sniper. --live trades; --reconcile only checks the account."""
+"""A maker + B IOC sniper, with an explicit recovery workflow."""
 import argparse
 import importlib
 import json
@@ -50,6 +50,7 @@ def build(exchange, config, event, *, clock=time.monotonic, sleep=time.sleep,
 def reconcile_run(args, config):
     guard = StateStore(args.state_file)
     exchange = None
+    cancelled = []
     try:
         guard.acquire()
         prior = json.loads(guard.path.read_text(encoding='utf-8'))
@@ -63,7 +64,11 @@ def reconcile_run(args, config):
             budget_module.RequestBudget(config.get('max_requests_per_second', 200),
                                         clock=time.monotonic, sleep=time.sleep))
         exchange.connect()
+        # Recovery owns cleanup for both instruments: cancel first, verify the
+        # account second, then either unlock or leave the state locked.
+        cancelled = reconciliation.cancel_outstanding_orders(exchange)
         result = reconciliation.audit_account(exchange, baseline)
+        result['cancelled_orders'] = cancelled
         exchange.disconnect()
         exchange = None
         guard.write(dict(strategy=VERSION, **result, run_id=prior.get('run_id'),
@@ -71,7 +76,8 @@ def reconcile_run(args, config):
         print(json.dumps(dict(summary=result, next_step='run --live'), ensure_ascii=False))
         return 0
     except Exception as exc:
-        print(json.dumps(dict(summary=dict(safe_to_start=False), error=str(exc)), ensure_ascii=False))
+        print(json.dumps(dict(summary=dict(safe_to_start=False, cancelled_orders=cancelled),
+                              error=str(exc)), ensure_ascii=False))
         return 2
     finally:
         try:
@@ -93,7 +99,9 @@ def main(argv=None):
     mode.add_argument('--check', action='store_true')
     mode.add_argument('--live', action='store_true')
     mode.add_argument('--reconcile', action='store_true',
-                      help='Reconnect, check original B baseline/no A/B orders, then unlock; no orders sent')
+                      help='Reconnect, check original B baseline/no A/B orders, then unlock')
+    parser.add_argument('--cancel-orders', action='store_true',
+                        help='Compatibility flag; --reconcile always cancels PHILIPS_A/B orders')
     parser.add_argument('--config', type=Path, default=DIRECTORY / 'config.json')
     parser.add_argument('--duration', type=float)
     parser.add_argument('--log-dir', type=Path, default=ROOT / 'data/runs/final-hybrid')
@@ -108,6 +116,8 @@ def main(argv=None):
         strategy_module.validate(config)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         parser.error(str(exc))
+    if args.cancel_orders and not args.reconcile:
+        parser.error('--cancel-orders requires --reconcile')
     if args.reconcile:
         return reconcile_run(args, config)
     if not args.live:

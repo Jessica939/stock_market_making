@@ -1,4 +1,4 @@
-"""Read-only account reconciliation before unlocking a disconnected run."""
+"""Account reconciliation before unlocking a disconnected run."""
 import json
 from pathlib import Path
 
@@ -33,11 +33,37 @@ def previous_baseline(prior, log_dir):
     return found.pop()
 
 
+def cancel_outstanding_orders(exchange):
+    """Cancel every visible A/B order and confirm both order books are clear."""
+    cancelled = []
+    for iid in (A, B):
+        orders = exchange.get_outstanding_orders(iid)
+        if not isinstance(orders, dict):
+            raise ValueError(f'{iid} outstanding-order snapshot is invalid')
+        for order_id in tuple(orders):
+            if type(order_id) is not int or order_id < 0:
+                raise ValueError(f'{iid} has an invalid order id')
+            response = exchange.delete_order(iid, order_id=order_id)
+            remaining = exchange.get_outstanding_orders(iid)
+            if not isinstance(remaining, dict):
+                raise ValueError(f'{iid} cancellation could not be confirmed')
+            if order_id in remaining:
+                reason = getattr(response, 'error_reason', 'order remains outstanding')
+                raise ValueError(f'{iid} order {order_id} cancellation failed: {reason}')
+            cancelled.append(dict(instrument=iid, order_id=order_id,
+                                  response_success=getattr(response, 'success', None)))
+    for iid in (A, B):
+        remaining = exchange.get_outstanding_orders(iid)
+        if not isinstance(remaining, dict) or remaining:
+            raise ValueError(f'{iid} still has orders after cancellation')
+    return cancelled
+
+
 def audit_account(exchange, baseline):
     if not exchange.is_connected():
         raise ValueError('reconciliation requires a fresh connected session')
     # A new connection after the old session ended, and fresh account queries.
-    # No insertion, cancellation, liquidation or inference from empty fill polls.
+    # Never infer IOC completion from an empty private-fill poll.
     for iid in (A, B):
         orders = exchange.get_outstanding_orders(iid)
         if not isinstance(orders, dict) or orders:
@@ -46,10 +72,17 @@ def audit_account(exchange, baseline):
     if (not isinstance(actual, dict)
             or any(type(actual.get(iid)) is not int or abs(actual[iid]) > 100 for iid in (A, B))):
         raise ValueError('invalid/out-of-limit A/B positions during reconciliation')
-    if actual[B] != baseline:
-        raise ValueError(f'B actual={actual[B]}, original baseline={baseline}, '
-                         f'residual={actual[B]-baseline}; no orders sent, state remains locked')
+    previous_baseline = baseline
+    # Recovery explicitly adopts the fresh account snapshot. Any difference
+    # from the old baseline is retained below for audit, not treated as owned
+    # inventory of the new run.
+    baseline = actual[B]
     if not exchange.is_connected():
         raise ValueError('connection lost during reconciliation')
-    return dict(actual_positions=actual, baseline_B=baseline, owned_B=0,
-                safe_to_start=True, reconciliation='new_session_account_at_original_B_baseline')
+    adopted = baseline != previous_baseline
+    return dict(actual_positions=actual, baseline_B=baseline,
+                previous_baseline_B=previous_baseline if adopted else None,
+                baseline_change_B=baseline-previous_baseline if adopted else 0,
+                owned_B=0, safe_to_start=True,
+                reconciliation=('adopted_current_B_as_new_baseline' if adopted
+                                else 'new_session_account_at_original_B_baseline'))

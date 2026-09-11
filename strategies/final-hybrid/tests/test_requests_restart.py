@@ -99,7 +99,7 @@ class RestartTests(unittest.TestCase):
         self.exchange.connect = lambda: None
         self.client = ModuleType('optibook.synchronous_client')
         self.client.Exchange = lambda **kwargs: self.exchange
-        self.args = NS(state_file=self.state, log_dir=self.logs)
+        self.args = NS(state_file=self.state, log_dir=self.logs, cancel_orders=False)
 
     def reconcile(self):
         with patch.dict(sys.modules, {'optibook.synchronous_client': self.client}), patch('builtins.print'):
@@ -114,22 +114,73 @@ class RestartTests(unittest.TestCase):
         self.assertFalse(self.exchange.sent)
         self.assertFalse(self.exchange.connected)
 
-    def test_residual_b_does_not_become_a_new_baseline(self):
+    def test_current_nonzero_b_becomes_new_baseline(self):
         self.exchange.positions[B] = 11
-        before = self.state.read_text()
-        self.assertEqual(self.reconcile(), 2)
-        self.assertEqual(self.state.read_text(), before)
+        self.assertEqual(self.reconcile(), 0)
+        saved = json.loads(self.state.read_text())
+        self.assertEqual(saved['baseline_B'], 11)
+        self.assertEqual(saved['previous_baseline_B'], 9)
+        self.assertEqual(saved['baseline_change_B'], 2)
         self.assertFalse(self.exchange.sent)
 
-    def test_outstanding_a_or_b_orders_keep_state_locked(self):
-        for iid in (A, B):
-            with self.subTest(iid=iid):
-                self.exchange.connected = True
-                self.exchange.resting = {A: {}, B: {}}
-                self.exchange.resting[iid][1] = NS(side='bid', price=100., volume=1)
-                self.assertEqual(self.reconcile(), 2)
-                self.assertEqual(json.loads(self.state.read_text()), self.prior)
-                self.assertFalse(self.exchange.sent)
+    def test_flat_b_is_automatically_adopted_as_new_baseline(self):
+        self.exchange.positions[B] = 0
+        self.assertEqual(self.reconcile(), 0)
+        saved = json.loads(self.state.read_text())
+        self.assertTrue(saved['safe_to_start'])
+        self.assertEqual(saved['baseline_B'], 0)
+        self.assertEqual(saved['previous_baseline_B'], 9)
+        self.assertEqual(saved['reconciliation'], 'adopted_current_B_as_new_baseline')
+
+    def test_reconcile_automatically_cancels_a_and_b_orders(self):
+        for iid, order_id in ((A, 1), (B, 2)):
+            self.exchange.resting[iid][order_id] = NS(
+                order_id=order_id, side='bid', price=100., volume=1)
+        self.assertEqual(self.reconcile(), 0)
+        saved = json.loads(self.state.read_text())
+        self.assertTrue(saved['safe_to_start'])
+        self.assertFalse(self.exchange.resting[A])
+        self.assertFalse(self.exchange.resting[B])
+        self.assertEqual(
+            {(row['instrument'], row['order_id']) for row in saved['cancelled_orders']},
+            {(A, 1), (B, 2)},
+        )
+
+    def test_explicit_cancel_orders_clears_a_and_b_then_unlocks(self):
+        for iid, order_id in ((A, 11), (B, 12)):
+            self.exchange.resting[iid][order_id] = NS(
+                order_id=order_id, side='bid', price=100., volume=1)
+        self.args.cancel_orders = True
+        self.assertEqual(self.reconcile(), 0)
+        saved = json.loads(self.state.read_text())
+        self.assertTrue(saved['safe_to_start'])
+        self.assertEqual(
+            {(row['instrument'], row['order_id']) for row in saved['cancelled_orders']},
+            {(A, 11), (B, 12)},
+        )
+        self.assertFalse(self.exchange.resting[A])
+        self.assertFalse(self.exchange.resting[B])
+        self.assertFalse(any(item[1] == 'limit' for item in self.exchange.sent))
+
+    def test_cancel_then_current_b_is_adopted(self):
+        self.exchange.resting[A][11] = NS(
+            order_id=11, side='bid', price=100., volume=1)
+        self.exchange.positions[B] = 10
+        self.args.cancel_orders = True
+        self.assertEqual(self.reconcile(), 0)
+        self.assertFalse(self.exchange.resting[A])
+        saved = json.loads(self.state.read_text())
+        self.assertTrue(saved['safe_to_start'])
+        self.assertEqual(saved['baseline_B'], 10)
+
+    def test_cancel_failure_keeps_state_locked(self):
+        self.exchange.resting[A][11] = NS(
+            order_id=11, side='bid', price=100., volume=1)
+        self.exchange.cancel_ok = False
+        self.args.cancel_orders = True
+        self.assertEqual(self.reconcile(), 2)
+        self.assertIn(11, self.exchange.resting[A])
+        self.assertFalse(json.loads(self.state.read_text())['safe_to_start'])
 
     def test_missing_original_log_never_uses_another_run(self):
         (self.logs/self.run_id/'events.jsonl').unlink()
