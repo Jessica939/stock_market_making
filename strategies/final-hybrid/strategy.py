@@ -8,12 +8,21 @@ from .execution import B, ExecutionFault
 from .maker import calculate_quote
 from .market import UnusableBook, bounded_book, cap_depth, sized_execution, vwap
 from .model import BasisSettings, CausalBasisModel
+from .cycle_target import TargetCycle, settings as cycle_settings
 
 A = 'PHILIPS_A'
 SYMBOLS = (A, B)
 
 
 def validate(config):
+    cycle_settings(config)
+    for key, default in (('max_requests_per_second', 200),):
+        value = config.get(key, default)
+        if type(value) is not int or not 1 <= value <= 200:
+            raise ValueError(key + ' must be an integer in 1..200')
+    maker_seconds = config.get('maker_seconds', .25)
+    if type(maker_seconds) not in (int, float) or not math.isfinite(maker_seconds) or maker_seconds < .05:
+        raise ValueError('maker_seconds must be finite and >=50ms')
     positive = ('hold_seconds', 'execution_delay_seconds', 'entry_wait_seconds',
                 'entry_edge_ticks', 'cooldown_seconds', 'max_book_age_seconds',
                 'max_pair_time_gap_seconds', 'max_spread_ticks', 'loop_seconds',
@@ -59,8 +68,10 @@ class HybridStrategy:
             raise ExecutionFault('cancel existing B orders before startup')
         self.model = CausalBasisModel(BasisSettings(
             **{f.name: config[f.name] for f in fields(BasisSettings)}))
+        self.target_cycle = TargetCycle(config)
         self.start = clock()
         self.last_clock = self.start
+        self.last_maker = -math.inf
         self.cutoff = self.start + config['session_seconds'] - config['closeout_seconds']
         self.pending = self.entry = self.exit_intent = None
         self.cycle_position = 0
@@ -87,11 +98,11 @@ class HybridStrategy:
         settings = dict(self.config, max_spread_ticks=1e12)
         return book, bounded_book(book, tick, self.epoch(), settings)
 
-    def pair(self):
+    def pair(self, *, check_spread=True):
         raw, bounded = {}, {}
         for iid in SYMBOLS:
             raw[iid], bounded[iid] = self.book(iid)
-            if bounded[iid]['ask']-bounded[iid]['bid'] > self.config['max_spread_ticks']*self.ticks[iid]+1e-9:
+            if check_spread and bounded[iid]['ask']-bounded[iid]['bid'] > self.config['max_spread_ticks']*self.ticks[iid]+1e-9:
                 raise UnusableBook('wide pair spread')
         if abs(bounded[A]['timestamp']-bounded[B]['timestamp']) > self.config['max_pair_time_gap_seconds']:
             raise UnusableBook('unsynchronized pair books')
@@ -103,7 +114,9 @@ class HybridStrategy:
         sign = 1 if report['side'] == 'bid' else -1
         self.cycle_position += sign * report['filled']
         self.cycle_cash -= sign * report['notional'] + report['filled'] * self.config['fee_per_lot']
-        if abs(self.cycle_position) > self.config['max_order_lots']:
+        limit = (self.target_cycle.position.target_lots if self.target_cycle.position.active
+                 else self.config['max_order_lots'])
+        if abs(self.cycle_position) > limit:
             raise ExecutionFault('sniper-owned B inventory exceeds its limit')
         return report['filled']
 
@@ -157,8 +170,14 @@ class HybridStrategy:
         filled = self._record_fill(self.executor.send_ioc(planner))
         if not self.cycle_position:
             self.event('stale_exit_confirmed', filled=filled, cycle_cash=self.cycle_cash)
+            cycle_exit = self.entry and self.entry.get('kind') == 'cycle_target'
             self.entry = self.exit_intent = None
-            self.cooldown_until = self.clock()+self.config['cooldown_seconds']
+            cooldown = (self.target_cycle.position.cooldown_seconds if cycle_exit
+                        else self.config['cooldown_seconds'])
+            if cycle_exit:
+                self.target_cycle.position.active = None
+                self.target_cycle.position.next_entry = self.clock()+cooldown
+            self.cooldown_until = self.clock()+cooldown
 
     def _enter(self):
         pending = self.pending
@@ -192,12 +211,88 @@ class HybridStrategy:
                               volume=abs(self.cycle_position), opened_at=self.clock())
             self.event('stale_entry_confirmed', entry=self.entry, recheck=recheck)
 
+    def _cycle_enter(self):
+        pending, self.pending = self.pending, None
+        controller = self.target_cycle.position
+        held = controller.active
+        def planner(actual):
+            now = self.clock()
+            if (held is None or now >= pending['expires'] or now >= self.cutoff
+                    or self.stopped or held['exit_reason']):
+                raise UnusableBook('cycle entry expired before transmission')
+            raw, books = self.pair()
+            self.target_cycle.observe(raw, self.exchange, self.ticks, now, self.epoch(), self.event)
+            quote = self.target_cycle.quote(raw[B], self.cycle_position, self.ticks[B], now)
+            side = 'bid' if held['sign'] > 0 else 'ask'
+            quantity = quote['buy_volume' if side == 'bid' else 'sell_volume']
+            # The target was frozen before the delay. Every swept level must
+            # leave more than one tick plus round-trip fees to that target.
+            edge = controller.edge_buffer_ticks*self.ticks[B]+2*self.config['fee_per_lot']
+            levels = [(p, v) for p, v in books[B]['asks' if side == 'bid' else 'bids']
+                      if held['sign']*(held['target_price']-p) > edge+1e-9]
+            levels = cap_depth(levels, min(quantity, max(0, 100-held['sign']*actual)))
+            if not levels:
+                raise UnusableBook('cycle target has no executable entry edge')
+            return dict(side=side, price=levels[-1][0], volume=sum(v for _, v in levels))
+        report = self.executor.send_ioc(planner)
+        if self._record_fill(report):
+            held['filled'] = True
+            self.entry = dict(kind='cycle_target', sign=held['sign'],
+                fair_B=held['target_price'], target_price=held['target_price'],
+                model_target_price=held['model_target_price'], opened_at=held['opened_at'],
+                volume=abs(self.cycle_position))
+            self.event('cycle_entry_confirmed', entry=self.entry)
+
+    def _cycle(self):
+        controller = self.target_cycle.position
+        now = self.clock()
+        if self.stopped:
+            self.pending = None
+            if self.cycle_position:
+                self.request_exit('risk' if self.risk_stopped else 'stopping')
+                self._exit()
+            else:
+                controller.active = None
+            return
+        if self.exit_intent:
+            self._exit()
+            return
+        # Exit observations need only a fresh B book, even if A is unusable.
+        raw, book = self.book(B)
+        quote = self.target_cycle.quote(raw, self.cycle_position, self.ticks[B], now)
+        self.event('cycle_position', **quote['cycle_position'])
+        held = controller.active
+        if held and held['exit_reason'] and self.cycle_position:
+            self.pending = None
+            self.request_exit(held['exit_reason'])
+            self._exit()
+            return
+        if self.pending:
+            if held is None or now >= self.pending['expires']:
+                self.pending = None
+            elif now >= self.pending['ready']:
+                self._cycle_enter()
+            return
+        if held is None or not (quote['buy_volume'] or quote['sell_volume']):
+            return
+        edge = controller.edge_buffer_ticks*self.ticks[B]+2*self.config['fee_per_lot']
+        touch = book['ask'] if held['sign'] > 0 else book['bid']
+        if held['sign']*(held['target_price']-touch) <= edge+1e-9:
+            return
+        ready = now+self.config['execution_delay_seconds']
+        self.pending = dict(kind='cycle_target', ready=ready,
+            expires=min(ready+self.config['entry_wait_seconds'], held['build_until'], self.cutoff))
+        self.event('cycle_entry_pending', target_price=held['target_price'], **self.pending)
+
     def _sniper(self, books, signal):
         now = self.clock()
         if now >= self.cutoff:
             self.stopped = True
         if books is not None:
             self._risk(books[B])
+        if self.target_cycle.position.active:
+            self._cycle()
+            return
         if self.cycle_position:
             if self.entry is None:
                 raise ExecutionFault('sniper inventory has no confirmed entry')
@@ -269,30 +364,49 @@ class HybridStrategy:
             raise ExecutionFault('B inventory changed outside confirmed sniper fills')
         if self.exchange.get_outstanding_orders(B):
             raise ExecutionFault('unexpected resting B order')
-        books, signal = None, dict(active=False, reason='invalid_pair')
+        raw, books, signal = {}, None, dict(active=False, reason='invalid_pair')
         try:
-            _, books = self.pair()
+            raw, books = self.pair(check_spread=False)
+            if any(books[i]['ask']-books[i]['bid'] > self.config['max_spread_ticks']*self.ticks[i]+1e-9
+                   for i in SYMBOLS):
+                raise UnusableBook('wide pair spread')
             signal = self.model.observe(now=now, a_mid=books[A]['mid'], b_mid=books[B]['mid'],
                                         book_stamps=(books[A]['timestamp'], books[B]['timestamp']))
         except UnusableBook as exc:
             signal['reason'] = str(exc)
+        self.target_cycle.observe(raw, self.exchange, self.ticks, now, self.epoch(), self.event)
         self.event('stale_signal', signal=signal)
         try:
             self._sniper(books, signal)
+            if (self.target_cycle.enabled and not self.stopped and self.pending is None
+                    and self.entry is None and self.target_cycle.position.active is None
+                    and self.clock() >= self.cooldown_until):
+                self._cycle()
         except UnusableBook as exc:
             self.event('stale_execution_blocked', reason=str(exc))
+        if not self.stopped and self.clock()-self.last_maker < self.config.get('maker_seconds', .25):
+            return
         # Always fetch again: IOC, cancellations or rate waits may have changed
         # both displayed depth and actual inventory since the signal snapshot.
         for iid in (A,):
             try:
+                self.executor.exchange._limiter.acquire()
                 raw, book = self.book(iid)
                 actual = self.positions()[iid]
                 quote = self.maker_quote(iid, raw, book, actual)
+                if quote:
+                    quote['valid_until'] = self.clock() + max(0.,
+                        self.config['max_book_age_seconds']-(self.epoch()-book['timestamp']))
             except UnusableBook:
                 quote = None
             if quote:
                 self.event('maker_quote', instrument=iid, **quote)
-            self.executor.reconcile(iid, quote)
+            try:
+                self.executor.reconcile(iid, quote)
+            except UnusableBook as exc:
+                self.event('maker_quote_skipped', reason=str(exc))
+                self.executor.reconcile(iid, None)
+        self.last_maker = self.clock()
 
     def stop(self):
         self.stopped = True

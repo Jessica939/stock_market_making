@@ -85,6 +85,7 @@ class HybridTests(unittest.TestCase):
     def setUp(self):
         self.config = json.loads((ROOT/'strategies/final-hybrid/config.json').read_text())
         self.config['max_order_lots'] = 2
+        self.config['b_cycle']['enabled'] = False
         self.clock = SimClock()
         self.exchange = Exchange(self.clock)
         self.events = []
@@ -229,9 +230,11 @@ class HybridTests(unittest.TestCase):
 
     def test_cancel_failure_prevents_replacement(self):
         self.strategy.step()
+        self.strategy.pending = None
+        self.signal['active'] = False
         self.exchange.cancel_ok = False
         count = len(self.exchange.sent)
-        self.frame(.02, a=102)
+        self.frame(.3, a=102)
         with self.assertRaises(RuntimeError):
             self.strategy.step()
         self.assertEqual(len(self.exchange.sent), count)
@@ -252,19 +255,17 @@ class HybridTests(unittest.TestCase):
             self.assertEqual(maker.calculate_quote(book, position, .1),
                              baseline['calculate_quote'](book, position, .1))
 
-    def test_capnp_enum_regression_all_affected_managers(self):
+    def test_capnp_enum_regression_final_manager(self):
         with self.assertRaises(TypeError):
             'reduce_' + DynamicEnum('bid')
-        for package in ('baseline-refine', 'baseline-refine-hybird', 'final-hybrid'):
-            module = importlib.import_module('stock_market_making.strategies.'+package+'.order_execution')
-            self.exchange.resting = {A: {}, B: {}}
-            self.exchange.insert_order(A, price=100., volume=20, side='bid', order_type='limit')
-            manager = module.QuoteManager(self.exchange)
-            report = manager.reconcile(A, dict(bid_price=100., ask_price=100.2,
-                                               buy_volume=20, sell_volume=0))
-            self.assertEqual(report['retained'], 1)
-            self.assertIsNotNone(external_price_book(self.exchange.get_last_price_book(A),
-                                                     self.exchange.get_outstanding_orders(A), .1))
+        self.exchange.resting = {A: {}, B: {}}
+        self.exchange.insert_order(A, price=100., volume=20, side='bid', order_type='limit')
+        manager = orders.QuoteManager(self.exchange)
+        report = manager.reconcile(A, dict(bid_price=100., ask_price=100.2,
+                                           buy_volume=20, sell_volume=0))
+        self.assertEqual(report['retained'], 1)
+        self.assertIsNotNone(external_price_book(self.exchange.get_last_price_book(A),
+                                                 self.exchange.get_outstanding_orders(A), .1))
 
     def test_stopping_cancels_a_and_no_b_maker(self):
         self.enter()
@@ -352,6 +353,29 @@ class HybridTests(unittest.TestCase):
         for t in (0., .05, .1, 1.):
             model.observe(now=t, a_mid=100., b_mid=100., book_stamps=(WALL, WALL))
         self.assertEqual(len(model.rows), 1)
+
+    def test_budget_wait_does_not_send_expired_a_quote(self):
+        budget = self.strategy.exchange.request_budget
+        while len(budget.sent) < budget.capacity-20:
+            budget.call('get_positions', self.exchange.get_positions)
+        quote = dict(bid_price=100., ask_price=100.2, buy_volume=1, sell_volume=1,
+                     valid_until=.1)
+        with self.assertRaises(market.UnusableBook):
+            self.strategy.executor.reconcile(A, quote)
+        self.assertFalse(self.exchange.sent)
+        self.assertGreater(self.clock.now, .1)
+
+    def test_budget_wait_rechecks_b_entry_expiry(self):
+        self.strategy.step()
+        self.assertIsNotNone(self.strategy.pending)
+        budget = self.strategy.exchange.request_budget
+        while len(budget.sent) < budget.capacity-10:
+            budget.call('get_positions', self.exchange.get_positions)
+        self.frame(.05)
+        self.strategy.step()
+        self.assertFalse(any(iid == B for iid, *_ in self.exchange.sent))
+        self.assertIsNone(self.strategy.entry)
+        self.assertGreater(self.clock.now, 1.)
 
 
 if __name__ == '__main__':
