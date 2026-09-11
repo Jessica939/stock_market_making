@@ -151,12 +151,52 @@ def execution_study(frames: list[pd.DataFrame]) -> list[dict]:
                 "horizon_samples": horizon,
                 "signals": int(len(mid)),
                 "mean_mid_markout": float(np.mean(mid)) if len(mid) else None,
+                "mid_markout_std_error": float(np.std(mid, ddof=1) / np.sqrt(len(mid))) if len(mid) > 1 else None,
                 "median_mid_markout": float(np.median(mid)) if len(mid) else None,
                 "mid_positive_rate": float(np.mean(mid > 0)) if len(mid) else None,
                 "direction_accuracy_when_B_moves": float(np.mean(sig[nonzero] == np.sign(moves[nonzero]))) if np.any(nonzero) else None,
                 "b_move_rate": float(np.mean(nonzero)) if len(mid) else None,
                 "mean_cross_spread_pnl": float(np.mean(cross)) if len(cross) else None,
+                "cross_spread_std_error": float(np.std(cross, ddof=1) / np.sqrt(len(cross))) if len(cross) > 1 else None,
                 "cross_spread_win_rate": float(np.mean(cross > 0)) if len(cross) else None,
+            }
+        )
+    return rows
+
+
+def cumulative_response_study(frames: list[pd.DataFrame]) -> list[dict]:
+    rows = []
+    for horizon in range(1, MAX_LAG + 1):
+        changes_a, responses_b, stale_a, stale_b = [], [], [], []
+        for frame in frames:
+            da = frame["dA"].to_numpy(dtype=float)
+            db = frame["dB"].to_numpy(dtype=float)
+            b = frame["mid_B"].to_numpy(dtype=float)
+            x = da[1:-horizon]
+            y = b[1 + horizon:] - b[1:-horizon]
+            changes_a.append(x)
+            responses_b.append(y)
+            stale = db[1:-horizon] == 0
+            stale_a.append(x[stale])
+            stale_b.append(y[stale])
+        x, y = np.concatenate(changes_a), np.concatenate(responses_b)
+        sx, sy = np.concatenate(stale_a), np.concatenate(stale_b)
+        good = np.isfinite(x) & np.isfinite(y)
+        sgood = np.isfinite(sx) & np.isfinite(sy)
+        x, y, sx, sy = x[good], y[good], sx[sgood], sy[sgood]
+        corr = float(np.corrcoef(x, y)[0, 1]) if np.std(x) and np.std(y) else None
+        stale_corr = float(np.corrcoef(sx, sy)[0, 1]) if np.std(sx) and np.std(sy) else None
+        slope = float(np.dot(x, y) / np.dot(x, x)) if np.dot(x, x) else None
+        stale_slope = float(np.dot(sx, sy) / np.dot(sx, sx)) if np.dot(sx, sx) else None
+        rows.append(
+            {
+                "horizon_samples": horizon,
+                "n": int(len(x)),
+                "corr_dA_to_cumulative_dB": corr,
+                "slope_dB_per_dA": slope,
+                "stale_b_n": int(len(sx)),
+                "stale_b_corr": stale_corr,
+                "stale_b_slope_dB_per_dA": stale_slope,
             }
         )
     return rows
@@ -187,6 +227,10 @@ def main() -> None:
     per_session = session_lag_results(sessions)
     execution = execution_study(frames)
     summary_sessions = [{key: value for key, value in x.items() if key != "frame"} for x in sessions]
+    split = max(1, len(sessions) // 2)
+    per_session_execution = {
+        session["name"]: execution_study([session["frame"]]) for session in sessions if session["samples"] >= 20
+    }
     result = {
         "method": {
             "price": "top-of-book mid",
@@ -200,9 +244,15 @@ def main() -> None:
         "per_session_a_leads_b": per_session,
         "train_test": train_test_check(sessions),
         "execution_study": execution,
+        "cumulative_response": cumulative_response_study(frames),
+        "execution_train": execution_study([x["frame"] for x in sessions[:split]]),
+        "execution_test": execution_study([x["frame"] for x in sessions[split:]]),
+        "per_session_execution": per_session_execution,
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "metrics.json").write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+    with (OUT_DIR / "metrics.json").open("w", encoding="utf-8", newline="\n") as handle:
+        json.dump(result, handle, indent=2, ensure_ascii=False)
+        handle.write("\n")
 
     best_a = max(a_leads_b[1:], key=lambda row: row["corr"])
     best_b = max(b_leads_a[1:], key=lambda row: row["corr"])

@@ -12,6 +12,7 @@ import argparse
 from collections import deque
 from dataclasses import dataclass, asdict
 from datetime import datetime
+from functools import lru_cache
 import glob
 import gzip
 import json
@@ -34,6 +35,7 @@ def stamp(value: str) -> float:
     return datetime.fromisoformat(value).timestamp()
 
 
+@lru_cache(maxsize=None)
 def load_session(path: str) -> tuple[list[dict], bool]:
     """Load paired recorder samples, retaining a valid prefix of truncated gzip."""
     grouped: dict[object, dict] = {}
@@ -165,6 +167,27 @@ class CausalBasisModel:
             self.rows.append((now, basis))
 
 
+@lru_cache(maxsize=None)
+def prepare_session(path: str) -> tuple[list[dict], bool, int]:
+    raw_frames, truncated = load_session(path)
+    model = CausalBasisModel()
+    prepared = []
+    for frame in raw_frames:
+        if not usable(frame):
+            continue
+        now = frame["t"]
+        a, b = (frame["rows"][s] for s in SYMBOLS)
+        basis = mid(a) - mid(b)
+        model.before_observation(now)
+        predicted_basis = model.predict(now)
+        prepared.append({"t": now, "a": a, "b": b,
+                         "fv": mid(a) - predicted_basis if predicted_basis is not None else None,
+                         "weights": tuple(model.weights) if model.weights is not None else None,
+                         "origin": model.origin, "period": model.period})
+        model.add(now, basis)
+    return prepared, truncated, len(raw_frames)
+
+
 @dataclass(frozen=True)
 class Params:
     edge_ticks: int
@@ -174,11 +197,12 @@ class Params:
     cooldown_seconds: float = 1.0
     fee_per_lot: float = 0.0
     tick: float = 0.1
+    fill_fraction: float = 0.5
+    depth_reserve_lots: int = 200
 
 
 def run_session(path: str, params: Params) -> dict:
-    frames, truncated = load_session(path)
-    model = CausalBasisModel()
+    frames, truncated, raw_frame_count = prepare_session(path)
     position = 0
     entry = None
     pending = None
@@ -186,24 +210,16 @@ def run_session(path: str, params: Params) -> dict:
     pnl = 0.0
     trades = []
     opportunities = 0
-    usable_frames = 0
     for frame in frames:
         now = frame["t"]
-        if not usable(frame):
-            continue
-        usable_frames += 1
-        a, b = (frame["rows"][s] for s in SYMBOLS)
-        basis = mid(a) - mid(b)
-
-        # Strict causality: predict/refit before adding this frame's A-B basis.
-        model.before_observation(now)
-        predicted_basis = model.predict(now)
-        fv = mid(a) - predicted_basis if predicted_basis is not None else None
+        a, b, fv = frame["a"], frame["b"], frame["fv"]
 
         if pending and now >= pending["ready"]:
             action = pending["action"]
             buy = action in ("enter_long", "exit_short")
-            px = executable_price(b, buy, params.order_lots)
+            px = executable_price(b, buy, params.order_lots,
+                                  reserve=params.depth_reserve_lots,
+                                  fill_fraction=params.fill_fraction)
             if px is not None:
                 if action.startswith("enter"):
                     sign = 1 if action == "enter_long" else -1
@@ -229,7 +245,9 @@ def run_session(path: str, params: Params) -> dict:
 
         if position and pending is None:
             sign = entry["sign"]
-            exit_px = executable_price(b, buy=sign < 0, quantity=params.order_lots)
+            exit_px = executable_price(b, buy=sign < 0, quantity=params.order_lots,
+                                       reserve=params.depth_reserve_lots,
+                                       fill_fraction=params.fill_fraction)
             corrected = (exit_px is not None and
                          sign * (exit_px - entry["fv"]) >= 0)
             timed_out = now - entry["t"] >= params.hold_seconds
@@ -239,16 +257,20 @@ def run_session(path: str, params: Params) -> dict:
                            "reason": "fair_reached" if corrected else "hold_timeout"}
 
         if position == 0 and pending is None and fv is not None and now >= cooldown_until:
-            buy_px = executable_price(b, True, params.order_lots)
-            sell_px = executable_price(b, False, params.order_lots)
+            buy_px = executable_price(b, True, params.order_lots,
+                                      reserve=params.depth_reserve_lots,
+                                      fill_fraction=params.fill_fraction)
+            sell_px = executable_price(b, False, params.order_lots,
+                                       reserve=params.depth_reserve_lots,
+                                       fill_fraction=params.fill_fraction)
             long_edge = fv - buy_px if buy_px is not None else -math.inf
             short_edge = sell_px - fv if sell_px is not None else -math.inf
             edge = max(long_edge, short_edge)
             if edge >= params.edge_ticks * params.tick:
                 opportunities += 1
                 sign = 1 if long_edge >= short_edge else -1
-                frozen_weights = tuple(model.weights)
-                origin, period = model.origin, model.period
+                frozen_weights = frame["weights"]
+                origin, period = frame["origin"], frame["period"]
                 def frozen_predict(t, w=frozen_weights, o=origin, p=period):
                     angle = 2 * math.pi * ((t - o) % p) / p
                     return w[0] + w[1] * math.sin(angle) + w[2] * math.cos(angle)
@@ -256,25 +278,27 @@ def run_session(path: str, params: Params) -> dict:
                            "ready": now + params.latency_seconds,
                            "decision_t": now, "predict": frozen_predict}
 
-        model.add(now, basis)
-
     # No invented terminal liquidity. Mark residual inventory at final executable
     # quote and report it separately; completed-trade PnL remains realized only.
     residual_mark = None
     if position and frames:
-        last_b = frames[-1]["rows"]["PHILIPS_B"]
-        px = executable_price(last_b, buy=position < 0, quantity=abs(position))
+        last_b = frames[-1]["b"]
+        px = executable_price(last_b, buy=position < 0, quantity=abs(position),
+                              reserve=params.depth_reserve_lots,
+                              fill_fraction=params.fill_fraction)
         if px is not None:
             residual_mark = entry["sign"] * (px - entry["px"]) * abs(position)
+            residual_mark -= 2 * params.fee_per_lot * abs(position)
     wins = sum(t["pnl"] > 0 for t in trades)
     losses = sum(t["pnl"] < 0 for t in trades)
     return {
         "session": os.path.basename(os.path.dirname(path)),
         "date": os.path.basename(os.path.dirname(path)).split("_")[1][:8],
-        "frames": len(frames), "usable_frames": usable_frames,
+        "frames": raw_frame_count, "usable_frames": len(frames),
         "truncated": truncated, "opportunities": opportunities,
         "trades": len(trades), "wins": wins, "losses": losses,
-        "pnl": pnl, "mean_trade": pnl / len(trades) if trades else None,
+        "pnl": pnl, "marked_pnl": pnl + (residual_mark or 0.0),
+        "mean_trade": pnl / len(trades) if trades else None,
         "median_trade": median([t["pnl"] for t in trades]) if trades else None,
         "residual_position": position, "residual_mark": residual_mark,
         "trade_details": trades,
@@ -284,6 +308,16 @@ def run_session(path: str, params: Params) -> dict:
 def aggregate(results: list[dict]) -> dict:
     trades = [t for r in results for t in r["trade_details"]]
     pnls = [t["pnl"] for t in trades]
+    ordered = sorted(pnls)
+    gross_profit = sum(x for x in pnls if x > 0)
+    gross_loss = -sum(x for x in pnls if x < 0)
+    longs = [t for t in trades if t["sign"] > 0]
+    shorts = [t for t in trades if t["sign"] < 0]
+    cumulative = peak = drawdown = 0.0
+    for value in pnls:
+        cumulative += value
+        peak = max(peak, cumulative)
+        drawdown = max(drawdown, peak - cumulative)
     return {
         "sessions": len(results),
         "usable_sessions": sum(r["usable_frames"] > 0 for r in results),
@@ -295,10 +329,21 @@ def aggregate(results: list[dict]) -> dict:
         "flat": sum(x == 0 for x in pnls),
         "win_rate": sum(x > 0 for x in pnls) / len(pnls) if pnls else None,
         "pnl": sum(pnls),
+        "marked_pnl": sum(r["marked_pnl"] for r in results),
         "mean_trade": sum(pnls) / len(pnls) if pnls else None,
         "median_trade": median(pnls) if pnls else None,
+        "p10_trade": ordered[int(0.10 * (len(ordered) - 1))] if ordered else None,
         "worst_trade": min(pnls) if pnls else None,
         "best_trade": max(pnls) if pnls else None,
+        "profit_factor": gross_profit / gross_loss if gross_loss else None,
+        "max_trade_drawdown": drawdown,
+        "long_trades": len(longs),
+        "long_pnl": sum(t["pnl"] for t in longs),
+        "short_trades": len(shorts),
+        "short_pnl": sum(t["pnl"] for t in shorts),
+        "median_hold_seconds": median([t["hold"] for t in trades]) if trades else None,
+        "fair_reached_rate": (sum(t["exit_reason"] == "fair_reached" for t in trades) / len(trades)
+                              if trades else None),
         "residual_positions": sum(r["residual_position"] != 0 for r in results),
     }
 
@@ -317,13 +362,34 @@ def main() -> None:
             params = Params(edge_ticks=edge_ticks, hold_seconds=hold)
             rows = [run_session(p, params) for p in train]
             grid.append({"params": asdict(params), "train": aggregate(rows)})
-    # Select on total train PnL, then mean trade, then fewer trades (less turnover).
-    chosen = max(grid, key=lambda x: (x["train"]["pnl"],
+    # Select on marked train PnL, then mean trade, then fewer trades (less turnover).
+    chosen = max(grid, key=lambda x: (x["train"]["marked_pnl"],
                                       x["train"]["mean_trade"] or -math.inf,
                                       -x["train"]["trades"]))
     params = Params(**chosen["params"])
     train_rows = [run_session(p, params) for p in train]
     test_rows = [run_session(p, params) for p in test]
+    test_grid = []
+    for item in grid:
+        variant = Params(**item["params"])
+        test_grid.append({"params": item["params"],
+                          "test": aggregate([run_session(p, variant) for p in test])})
+    sensitivities = []
+    variants = [
+        ("base", {}),
+        ("latency_0.5s", {"latency_seconds": 0.5}),
+        ("latency_1.0s", {"latency_seconds": 1.0}),
+        ("fee_0.05", {"fee_per_lot": 0.05}),
+        ("fee_0.10", {"fee_per_lot": 0.10}),
+        ("fill_25pct", {"fill_fraction": 0.25}),
+        ("combined_conservative", {"latency_seconds": 0.5, "fee_per_lot": 0.05,
+                                   "fill_fraction": 0.25, "depth_reserve_lots": 400}),
+    ]
+    base = asdict(params)
+    for name, changes in variants:
+        variant = Params(**dict(base, **changes))
+        sensitivities.append({"name": name, "params": asdict(variant),
+                              "test": aggregate([run_session(p, variant) for p in test])})
     payload = {
         "method": {
             "fair_value": "A_mid minus 180-second harmonic forecast of A_mid-B_mid",
@@ -339,7 +405,9 @@ def main() -> None:
         "test": aggregate(test_rows),
         "train_sessions": [{k: v for k, v in r.items() if k != "trade_details"} for r in train_rows],
         "test_sessions": [{k: v for k, v in r.items() if k != "trade_details"} for r in test_rows],
+        "sensitivities": sensitivities,
         "grid": grid,
+        "test_grid_diagnostic": test_grid,
     }
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     Path(args.output).write_text(json.dumps(payload, indent=2), encoding="utf-8")
