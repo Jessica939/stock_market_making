@@ -121,10 +121,16 @@ python3 stock_market_making/strategies/final-hybrid/run.py --check
 python3 stock_market_making/strategies/final-hybrid/run.py --reconcile
 ```
 
-`--check` 输出版本应为 `final_hybrid_v1_2`。`--reconcile` 获取状态锁并重新连接，
+`--check` 输出版本应为 `final_hybrid_v1_3`。`--reconcile` 获取状态锁并重新连接，
 自动逐笔取消 PHILIPS_A/B 的全部挂单并确认清空，然后读取实际仓位。当前实际 B 直接成为
 新运行基准；旧基准和差额写入 `previous_baseline_B`、`baseline_change_B` 供追溯。
 它不自动平仓或发送新订单。成功后再运行 `--live`。
+
+默认 `run_forever=true`：正常运行不会因 session 时长、IOC 私人成交回报延迟、账户仓位与
+本地 B 状态不一致、断线或单次 API 异常自行退出。断线会持续重连；IOC 在结算等待结束后以
+交易所账户仓位为准记录成交，并用限价估算未出现在私人成交流中的成交额。发现 B 不一致时，
+策略会清空 B 的本地周期状态、以当前账户仓位重建基准，然后继续交易。按 Ctrl+C 才会进入
+撤销 A 挂单和关闭 B 周期仓位的收尾流程。
 
 旧 v1 在断线收尾时可能把 B 基准从状态文件中覆盖掉；恢复入口会读取状态中 `run_id`
 指定的那份 `events.jsonl` 的 `inventory_baseline` / `settings`，不会使用其他会话的基准。

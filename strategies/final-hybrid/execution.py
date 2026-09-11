@@ -51,9 +51,9 @@ class HybridExchange(LimitedExchange):
 class HybridExecutor(QuoteManager):
     """A limits and B IOC share one limiter; B has no resting strategy orders.
 
-    The live API provides no terminal partial-fill count. Follow the sniper's
-    rule: full private fills + matching positions prove completion; a timeout,
-    zero fill or a stable partial snapshot does not. Only tests/replay may
+    The live API provides no terminal partial-fill count. Full private fills
+    plus matching positions prove completion; otherwise, after a bounded wait,
+    the fresh exchange account position settles the IOC. Tests/replay may
     inject authoritative terminal_quantity evidence.
     """
 
@@ -65,12 +65,15 @@ class HybridExecutor(QuoteManager):
         self.settlement_seconds = settlement_seconds
         self.terminal_quantity = terminal_quantity
         self.halted = False
+        self.halt_reason = None
         self.pending = None
         self.deadline = None
 
     def reconcile(self, instrument_id, quote):
-        if self.halted and quote:
-            raise ExecutionFault('unresolved IOC: all inserts disabled')
+        # An unresolved B IOC must never authorize another B order. It does
+        # not make an independently risk-limited A maker quote unsafe.
+        if self.halted and quote and instrument_id == B:
+            raise ExecutionFault(self.halt_reason or 'unresolved B IOC: B inserts disabled')
         self.exchange.maker_deadline = quote.get('valid_until') if quote else None
         try:
             return super().reconcile(instrument_id, quote)
@@ -84,6 +87,19 @@ class HybridExecutor(QuoteManager):
         if instrument_id not in (None, 'PHILIPS_A', B):
             raise ValueError('instrument outside final-hybrid scope')
         return super()._capacity(side, desired, position, instrument_id=None)
+
+    def pause_b(self, reason):
+        self.halted = True
+        self.halt_reason = str(reason)
+        self.event('b_execution_paused', reason=self.halt_reason, pending=self.pending)
+
+    def resume_b(self, reason):
+        was_halted = self.halted or self.pending is not None
+        self.halted = False
+        self.halt_reason = None
+        self.pending = None
+        if was_halted:
+            self.event('b_execution_resumed', reason=reason)
 
     def send_ioc(self, planner):
         if self.halted or self.pending is not None:
@@ -119,8 +135,8 @@ class HybridExecutor(QuoteManager):
                 filled = self.fill_stream.confirmed_volume(B, oid)
                 position = self._position(B)
                 delta = (position-before) * (1 if order['side'] == 'bid' else -1)
-                if not 0 <= delta <= order['volume'] or filled > order['volume'] or self._orders(B):
-                    raise ExecutionFault('IOC fills, inventory or resting orders are inconsistent')
+                if self._orders(B):
+                    raise ExecutionFault('IOC unexpectedly remains outstanding')
                 if self.terminal_quantity is not None:
                     evidence = self.terminal_quantity(B, oid)
                     if evidence is not None:
@@ -137,11 +153,23 @@ class HybridExecutor(QuoteManager):
                     self.event('ioc_confirmed', **report)
                     return report
                 if self.clock()-started >= self.settlement_seconds:
-                    raise ExecutionFault('IOC terminal quantity unproven; all inserts disabled')
+                    # The live client does not expose an IOC terminal sequence.
+                    # Treat the fresh account position as authoritative, so a
+                    # delayed private fill cannot halt the B strategy. Limit
+                    # price is conservative for unreported quantity: a bid can
+                    # only fill at or below it; an ask at or above it.
+                    account_filled = min(order['volume'], max(0, delta))
+                    report = dict(self.pending, filled=account_filled, position=position,
+                                  notional=account_filled*order['price'],
+                                  private_filled=filled, terminal_proven=False,
+                                  settlement='account_position_at_timeout')
+                    self.pending = None
+                    self.event('ioc_settled_from_account', **report)
+                    return report
                 self.sleep(.05)
         except UnusableBook:
             raise  # The planner declined before any transport call.
         except BaseException:
             # Ctrl+C during insertion/settlement is also an uncertain outcome.
-            self.halted = True
+            self.pause_b('IOC insertion/settlement raised an exception')
             raise

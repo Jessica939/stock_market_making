@@ -37,6 +37,7 @@
   "shutdown_grace_seconds": 5.0,
   "max_requests_per_second": 200,
   "maker_seconds": 0.25,
+  "run_forever": true,
   "b_cycle": {
     "enabled": true,
     "signal": {

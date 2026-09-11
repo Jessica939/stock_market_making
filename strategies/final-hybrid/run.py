@@ -21,8 +21,8 @@ from stock_market_making.strategies.common.runner import Journal
 from stock_market_making.strategies.hybrid.state import StateStore
 from stock_market_making.recording.shared_market_recording import RecordingExchange
 
-VERSION = 'final_hybrid_v1_2'
-COMPATIBLE_VERSIONS = {'final_hybrid_v1', 'final_hybrid_v1_1', VERSION}
+VERSION = 'final_hybrid_v1_3'
+COMPATIBLE_VERSIONS = {'final_hybrid_v1', 'final_hybrid_v1_1', 'final_hybrid_v1_2', VERSION}
 A, B = strategy_module.SYMBOLS
 
 
@@ -43,7 +43,8 @@ def build(exchange, config, event, *, clock=time.monotonic, sleep=time.sleep,
         terminal_quantity=terminal_quantity)
     strategy = strategy_module.HybridStrategy(sender, executor, config, event=event,
                                                clock=clock, epoch=epoch)
-    executor.deadline = strategy.start + config['session_seconds'] + config['shutdown_grace_seconds']
+    executor.deadline = (float('inf') if config.get('run_forever', True)
+                         else strategy.start + config['session_seconds'] + config['shutdown_grace_seconds'])
     return strategy, fills
 
 
@@ -111,6 +112,7 @@ def main(argv=None):
         config = json.loads(args.config.read_text(encoding='utf-8'))
         config.setdefault('max_requests_per_second', 200)
         config.setdefault('maker_seconds', .25)
+        config.setdefault('run_forever', True)
         if args.duration is not None:
             config['session_seconds'] = args.duration
         strategy_module.validate(config)
@@ -166,22 +168,40 @@ def main(argv=None):
               f'log: {journal.path}', flush=True)
         end = strategy.start + config['session_seconds']
         last_budget_log = -float('inf')
-        while exchange.is_connected() and time.monotonic() < end:
+        while True:
             started = time.monotonic()
-            if journal.failed:
-                strategy.stopped = True
-            strategy.step()
-            record_fills(fills, journal.emit)
-            for iid in (A, B):
-                exchange.poll_new_trade_ticks(iid)
-            exchange.sample_market_data()
-            if time.monotonic()-last_budget_log >= 1:
-                journal.emit('request_budget', **budget.snapshot(),
-                             loop_work_seconds=time.monotonic()-started,
-                             loop_target_seconds=config['loop_seconds'])
-                last_budget_log = time.monotonic()
-            if strategy.stopped and strategy.cycle_position == 0:
-                break
+            try:
+                if not exchange.is_connected():
+                    journal.emit('connection_lost_reconnecting')
+                    while not exchange.is_connected():
+                        try:
+                            exchange.connect()
+                        except Exception as exc:
+                            journal.emit('connection_reconnect_failed', error=str(exc))
+                        if not exchange.is_connected():
+                            time.sleep(1.)
+                    journal.emit('connection_reconnected')
+                if not config['run_forever'] and time.monotonic() >= end:
+                    break
+                strategy.step()
+                record_fills(fills, journal.emit)
+                for iid in (A, B):
+                    exchange.poll_new_trade_ticks(iid)
+                exchange.sample_market_data()
+                if time.monotonic()-last_budget_log >= 1:
+                    journal.emit('request_budget', **budget.snapshot(),
+                                 loop_work_seconds=time.monotonic()-started,
+                                 loop_target_seconds=config['loop_seconds'])
+                    last_budget_log = time.monotonic()
+                if (not config['run_forever'] and strategy.stopped
+                        and strategy.cycle_position == 0):
+                    break
+            except Exception as exc:
+                # Every live-loop fault is retried. On the next successful
+                # step B is rebased from the exchange account if necessary.
+                journal.emit('runtime_error_continuing', error=str(exc), traceback=traceback.format_exc())
+                time.sleep(.25)
+                continue
             time.sleep(max(0, config['loop_seconds'] - (time.monotonic() - started)))
     except KeyboardInterrupt:
         print('Stopping A quotes and closing confirmed B sniper inventory.', flush=True)

@@ -185,24 +185,24 @@ class HybridTests(unittest.TestCase):
         self.strategy.step()
         self.assertEqual(self.exchange.positions[B], -9)
 
-    def test_unexplained_b_change_stops(self):
+    def test_unexplained_b_change_rebases_to_exchange(self):
         self.exchange.positions[B] = 1
-        with self.assertRaises(run.execution.ExecutionFault):
-            self.strategy.step()
+        self.strategy.step()
+        self.assertEqual(self.strategy.baseline_b, 1)
+        self.assertEqual(self.strategy.cycle_position, 0)
+        self.assertFalse(self.strategy.executor.halted)
+        self.assertTrue(any(name == 'b_runtime_rebased' for name, _ in self.events))
 
-    def test_live_partial_is_unresolved_and_blocks_a_and_b(self):
+    def test_live_partial_settles_from_account_and_keeps_running(self):
         self.strategy.executor.terminal_quantity = None
         self.strategy.step()
         self.frame(.05)
         self.exchange.accessible[B]['asks'][100.2] = 1
-        with self.assertRaises(run.execution.ExecutionFault):
-            self.strategy.step()
-        self.assertTrue(self.strategy.executor.halted)
-        count = len(self.exchange.sent)
-        with self.assertRaises(run.execution.ExecutionFault):
-            self.strategy.executor.reconcile(A, dict(bid_price=100., ask_price=100.2,
-                                                    buy_volume=1, sell_volume=1))
-        self.assertEqual(len(self.exchange.sent), count)
+        self.strategy.step()
+        self.assertEqual(self.strategy.cycle_position, 1)
+        self.assertFalse(self.strategy.executor.halted)
+        self.assertIsNone(self.strategy.executor.pending)
+        self.assertTrue(any(name == 'ioc_settled_from_account' for name, _ in self.events))
 
     def test_terminal_partial_accounting_and_retry_remaining_exit(self):
         self.strategy.step()

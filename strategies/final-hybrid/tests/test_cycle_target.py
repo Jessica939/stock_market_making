@@ -133,15 +133,15 @@ class CycleTargetTests(unittest.TestCase):
         self.assertFalse(any(row[0] == B for row in self.exchange.sent))
         self.assertEqual(self.strategy.cycle_position, 0)
 
-    def test_unproven_cycle_partial_fill_halts_shared_executor(self):
+    def test_unproven_cycle_partial_fill_settles_from_account(self):
         self.strategy.executor.terminal_quantity = None
         self.strategy.step()
         self.frame(.05)
         self.exchange.accessible[B]['asks'][100.2] = 20
-        with self.assertRaises(run.execution.ExecutionFault):
-            self.strategy.step()
-        self.assertTrue(self.strategy.executor.halted)
-        self.assertIsNotNone(self.strategy.executor.pending)
+        self.strategy.step()
+        self.assertEqual(self.strategy.cycle_position, 20)
+        self.assertFalse(self.strategy.executor.halted)
+        self.assertIsNone(self.strategy.executor.pending)
 
     def test_stop_observation_gap_restarts_confirmation(self):
         self.enter()

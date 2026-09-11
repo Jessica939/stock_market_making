@@ -23,6 +23,8 @@ def validate(config):
     maker_seconds = config.get('maker_seconds', .25)
     if type(maker_seconds) not in (int, float) or not math.isfinite(maker_seconds) or maker_seconds < .05:
         raise ValueError('maker_seconds must be finite and >=50ms')
+    if type(config.get('run_forever', True)) is not bool:
+        raise ValueError('run_forever must be boolean')
     positive = ('hold_seconds', 'execution_delay_seconds', 'entry_wait_seconds',
                 'entry_edge_ticks', 'cooldown_seconds', 'max_book_age_seconds',
                 'max_pair_time_gap_seconds', 'max_spread_ticks', 'loop_seconds',
@@ -72,7 +74,8 @@ class HybridStrategy:
         self.start = clock()
         self.last_clock = self.start
         self.last_maker = -math.inf
-        self.cutoff = self.start + config['session_seconds'] - config['closeout_seconds']
+        self.cutoff = (math.inf if config.get('run_forever', True)
+                       else self.start + config['session_seconds'] - config['closeout_seconds'])
         self.pending = self.entry = self.exit_intent = None
         self.cycle_position = 0
         self.cycle_cash = 0.0
@@ -360,10 +363,22 @@ class HybridStrategy:
         if not math.isfinite(now) or now < self.last_clock:
             raise ExecutionFault('invalid or reversed clock')
         self.last_clock = now
-        if self.positions()[B] != self.baseline_b + self.cycle_position:
-            raise ExecutionFault('B inventory changed outside confirmed sniper fills')
-        if self.exchange.get_outstanding_orders(B):
-            raise ExecutionFault('unexpected resting B order')
+        actual_b = self.positions()[B]
+        b_orders = self.exchange.get_outstanding_orders(B)
+        if b_orders:
+            self.executor.reconcile(B, None)
+            self.event('b_orders_cancelled_for_recovery', order_ids=tuple(b_orders))
+        if self.executor.halted or actual_b != self.baseline_b + self.cycle_position:
+            previous = dict(previous_baseline_B=self.baseline_b, cycle_position=self.cycle_position,
+                            actual_B=actual_b, reason=self.executor.halt_reason)
+            self.baseline_b = actual_b
+            self.cycle_position = 0
+            self.cycle_cash = self.high = 0.
+            self.pending = self.entry = self.exit_intent = None
+            self.target_cycle.position.active = None
+            self.target_cycle.position.next_entry = now + self.config['cooldown_seconds']
+            self.executor.resume_b('reconciled to fresh account B position')
+            self.event('b_runtime_rebased', **previous, baseline_B=self.baseline_b)
         raw, books, signal = {}, None, dict(active=False, reason='invalid_pair')
         try:
             raw, books = self.pair(check_spread=False)
