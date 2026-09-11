@@ -196,12 +196,17 @@ class QuoteManager:
     sleep; failed or unconfirmed updates never permit replacement that cycle.
     """
 
-    def __init__(self, exchange, *, position_limit=100, soft_limit=70):
+    def __init__(self, exchange, *, position_limit=200, soft_limit=200,
+                 net_position_limit=200, net_symbols=('PHILIPS_A', 'PHILIPS_B')):
         self.exchange = exchange
         self.position_limit = _lots(position_limit, name='position_limit')
         self.soft_limit = _lots(soft_limit, name='soft_limit')
         if self.soft_limit > self.position_limit:
             raise ValueError('soft_limit cannot exceed position_limit')
+        self.net_position_limit = _lots(net_position_limit, name='net_position_limit')
+        self.net_symbols = tuple(net_symbols)
+        if not self.net_symbols or len(set(self.net_symbols)) != len(self.net_symbols):
+            raise ValueError('net_symbols must be nonempty and unique')
 
     @staticmethod
     def _price(value):
@@ -233,6 +238,12 @@ class QuoteManager:
         if type(reduce_only) is not bool:
             raise ValueError('reduce_only must be boolean')
         desired['reduce_only'] = reduce_only
+        for side in ('bid', 'ask'):
+            key = 'reduce_' + side
+            value = quote.get(key, False)
+            if type(value) is not bool:
+                raise ValueError(key + ' must be boolean')
+            desired[key] = value
         if 'target_position' in quote:
             target = quote['target_position']
             if isinstance(target, bool) or not isinstance(target, int) or abs(target) > self.position_limit:
@@ -277,19 +288,37 @@ class QuoteManager:
             raise ValueError('position must be an integer')
         return position
 
-    def _capacity(self, side, desired, position):
-        # Preserve the existing soft threshold behavior. Below +70, e.g. +69,
-        # the hard room is 31, not a new strict one-lot soft-limit allowance.
+    def _capacity(self, side, desired, position, instrument_id=None):
+        net_room = self.net_position_limit
+        if instrument_id is not None:
+            if instrument_id not in self.net_symbols:
+                raise ValueError('instrument outside the account net-limit scope')
+            # Read resting exposure BEFORE positions. A fill between the reads
+            # is conservatively counted twice, never omitted from both.
+            other_live = sum(volume for iid in self.net_symbols if iid != instrument_id
+                             for order_side, _, volume in self._orders(iid).values()
+                             if order_side == side)
+            positions = self.exchange.get_positions()
+            if not isinstance(positions, Mapping) or any(i not in positions for i in self.net_symbols):
+                raise RuntimeError('cannot verify A+B net position')
+            quantities = {}
+            for iid in self.net_symbols:
+                value = positions[iid]
+                if isinstance(value, bool):
+                    raise ValueError('invalid account position')
+                quantities[iid] = operator.index(value)
+            position, net = quantities[instrument_id], sum(quantities.values())
+            net_room = (self.net_position_limit - net if side == 'bid' else self.net_position_limit + net) - other_live
         if side == 'bid':
             room = 0 if position >= self.soft_limit else self.position_limit - position
         else:
             room = 0 if position <= -self.soft_limit else self.position_limit + position
-        if desired.get('reduce_only', False):
+        if desired.get('reduce_only', False) or desired.get('reduce_' + side, False):
             room = min(room, -position if side == 'bid' else position)
         if 'target_position' in desired:
             target = desired['target_position']
             room = min(room, target - position if side == 'bid' else position - target)
-        return min(desired[side][1], max(0, room))
+        return min(desired[side][1], max(0, min(room, net_room)))
 
     @staticmethod
     def _check_response(response, instrument_id, action, order_id=None):
@@ -315,12 +344,23 @@ class QuoteManager:
             raise RuntimeError(f'{instrument_id}: cancellation of {order_id} not confirmed')
 
     def _verify(self, instrument_id, orders, desired, position):
-        for side in ('bid', 'ask'):
-            side_orders = [order for order in orders.values() if order[0] == side and order[2]]
-            if any(not self._same_price(order[1], desired[side][0]) for order in side_orders):
-                raise RuntimeError(f'{instrument_id}: old {side} price still outstanding')
-            if sum(order[2] for order in side_orders) > self._capacity(side, desired, position):
-                raise OrderLimitError(f'{instrument_id}: {side} remaining volume exceeds current capacity')
+        # Large/marketable orders can fill between separate orders/position
+        # reads. Retry a stale check before treating it as a strategy fault.
+        for _ in range(3):
+            error = None
+            for side in ('bid', 'ask'):
+                side_orders = [order for order in orders.values() if order[0] == side and order[2]]
+                if any(not self._same_price(order[1], desired[side][0]) for order in side_orders):
+                    error = RuntimeError(f'{instrument_id}: old {side} price still outstanding')
+                    break
+                if sum(order[2] for order in side_orders) > self._capacity(side, desired, position, instrument_id):
+                    error = OrderLimitError(f'{instrument_id}: {side} remaining volume exceeds current capacity')
+                    break
+            if error is None:
+                return
+            orders = self._orders(instrument_id)
+            position = self._position(instrument_id)
+        raise error
 
     def reconcile(self, instrument_id, quote):
         """Retain/reduce/cancel/insert as needed; return counts of these actions.
@@ -344,7 +384,7 @@ class QuoteManager:
                 side, price, volume = order
                 if not volume or not self._same_price(price, desired[side][0]):
                     self._cancel(instrument_id, order_id, result)
-                elif self._capacity(side, desired, self._position(instrument_id)) == 0:
+                elif self._capacity(side, desired, self._position(instrument_id), instrument_id) == 0:
                     self._cancel(instrument_id, order_id, result)
             except Exception as error:
                 if first_error is None:
@@ -352,7 +392,8 @@ class QuoteManager:
 
         # Preserve the earliest orders in the snapshot where possible. Cancel
         # from the end until total remaining fits. A surviving smaller order
-        # is retained without a top-up; if none survives, insert the new size.
+        # is retained for ordinary market making. A cycle target can replace a
+        # smaller order when A releases reserved capacity; cancel before refill.
         for side in ('bid', 'ask'):
             ids = [oid for oid, order in self._orders(instrument_id).items()
                    if order[0] == side]
@@ -362,9 +403,10 @@ class QuoteManager:
                     order = orders.get(order_id)
                     if order is None:
                         continue
-                    capacity = self._capacity(side, desired, self._position(instrument_id))
+                    capacity = self._capacity(side, desired, self._position(instrument_id), instrument_id)
                     total = sum(o[2] for o in orders.values() if o[0] == side)
-                    if total > capacity:
+                    expand_cycle = bool(desired.get('target_position')) and total < capacity
+                    if total > capacity or expand_cycle:
                         self._cancel(instrument_id, order_id, result)
                 except Exception as error:
                     if first_error is None:
@@ -384,7 +426,7 @@ class QuoteManager:
             self._verify(instrument_id, orders, desired, position)
             if any(order[0] == side and order[2] for order in orders.values()):
                 continue  # Never top up a partially filled resting order.
-            volume = self._capacity(side, desired, position)
+            volume = self._capacity(side, desired, position, instrument_id)
             if not volume:
                 continue
             price = desired[side][0]

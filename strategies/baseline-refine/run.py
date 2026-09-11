@@ -17,6 +17,7 @@ def load_quote_definitions():
     protection = importlib.import_module(PACKAGE + '.quote_protection')
     namespace = dict(math=math, CycleSettings=cycle.CycleSettings,
                      ProtectionSettings=protection.ProtectionSettings,
+                     apply_cycle_quote=cycle.apply_cycle_quote, protect_quote=protection.protect_quote,
                      RUNS_DIR=DIRECTORY.parents[1]/'data/runs',
                      MARKET_DIR=DIRECTORY.parents[1]/'data/market')
     notebook = json.loads((DIRECTORY/'strategy_with_logging.ipynb').read_text(encoding='utf-8'))
@@ -26,6 +27,9 @@ def load_quote_definitions():
             exec(compile(source, str(DIRECTORY/'strategy_with_logging.ipynb'), 'exec'), namespace)
     position = importlib.import_module(PACKAGE + '.cycle_position')
     position.CyclePosition(**namespace['B_POSITION_SETTINGS'])
+    orders = importlib.import_module(PACKAGE + '.order_execution')
+    orders.QuoteManager(None, position_limit=namespace['POSITION_LIMIT'],
+                        soft_limit=namespace['SOFT_LIMIT'], net_position_limit=namespace['NET_POSITION_LIMIT'])
     return namespace
 
 
@@ -58,6 +62,9 @@ def main():
         strategy = load_quote_definitions()
         print(json.dumps(dict(strategy=strategy['STRATEGY_VERSION'],
                               position=strategy['B_POSITION_SETTINGS'],
+                              net_position_limit=strategy['NET_POSITION_LIMIT'],
+                              net_position_scope='PHILIPS_A + PHILIPS_B and same-side resting orders',
+                              a_entry_volume=strategy['ORDER_VOLUME'],
                               horizon_seconds=strategy['CYCLE_SETTINGS'].horizon_seconds,
                               live_dependencies_checked=False), indent=2))
         return

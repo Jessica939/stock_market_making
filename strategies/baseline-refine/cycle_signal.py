@@ -60,7 +60,7 @@ def book_time(book):
     return stamp.timestamp()
 
 
-def usable_book(book, tick, wall, settings):
+def usable_book(book, tick, wall, settings, *, check_spread=True):
     """Require fresh two-sided, positive, sorted, grid-aligned external depth."""
     try:
         stamp = book_time(book)
@@ -79,7 +79,7 @@ def usable_book(book, tick, wall, settings):
                     return False
                 previous = price
         spread = book.asks[0].price - book.bids[0].price
-        return 0 < spread <= settings.max_spread_ticks * tick + 1e-9
+        return 0 < spread and (not check_spread or spread <= settings.max_spread_ticks * tick + 1e-9)
     except (AttributeError, TypeError, ValueError, OverflowError):
         return False
 
