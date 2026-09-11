@@ -19,6 +19,7 @@ from stock_market_making.strategies.hybrid.state import StateStore
 
 
 VERSION = "stale_quote_sniping_v3"
+COMPATIBLE_SAFE_VERSIONS = {"stale_quote_sniping_v1", "stale_quote_sniping_v2", VERSION}
 
 
 def main(argv=None):
@@ -68,7 +69,8 @@ def main(argv=None):
             guard.acquire()
             if guard.path.exists():
                 old = json.loads(guard.path.read_text(encoding="utf-8"))
-                if old.get("strategy") != VERSION or old.get("safe_to_start") is not True:
+                if (old.get("strategy") not in COMPATIBLE_SAFE_VERSIONS
+                        or old.get("safe_to_start") is not True):
                     raise ValueError("previous sniper run is unconfirmed or risk-stopped; reconcile the account first")
             from optibook.synchronous_client import Exchange
             from stock_market_making.recording.shared_market_recording import RecordingExchange

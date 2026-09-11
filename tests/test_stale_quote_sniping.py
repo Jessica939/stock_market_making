@@ -8,7 +8,9 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
 
-from stock_market_making.strategies.stale_quote_sniping.engine import Engine, SYMBOLS, validate
+from stock_market_making.strategies.stale_quote_sniping.engine import (
+    Engine, SYMBOLS, scaled_entry_size, sized_execution, validate,
+)
 from stock_market_making.strategies.stale_quote_sniping.model import CausalBasisModel
 from stock_market_making.strategies.common.execution import ExecutionFault
 from stock_market_making.strategies.common.simulation import ReplayExchange, SimClock
@@ -180,6 +182,19 @@ class StaleQuoteTests(unittest.TestCase):
         self.assertEqual(config["order_lots"], 2)
         self.assertEqual(config["max_order_lots"], 50)
         self.assertEqual(config["exit_confirmation_seconds"], 0.0)
+        tick = 0.1
+        self.assertEqual(scaled_entry_size(0.3, tick, config), 2)
+        self.assertEqual(scaled_entry_size(0.5, tick, config), 12)
+        self.assertEqual(scaled_entry_size(0.7, tick, config), 22)
+        self.assertEqual(scaled_entry_size(1.3, tick, config), 50)
+
+    def test_large_edge_falls_back_to_available_profitable_size(self):
+        config = json.loads((ROOT / "strategies/stale_quote_sniping/config.json").read_text())
+        book = {"tick": 0.1, "asks": [(100.2, 2), (100.3, 3)], "bids": [(100.0, 5)]}
+        quantity, execution, edge = sized_execution(book, True, 101.0, config)
+        self.assertEqual(quantity, 5)
+        self.assertAlmostEqual(execution, 100.26)
+        self.assertAlmostEqual(edge, 0.74)
 
 
 class CausalityTests(unittest.TestCase):

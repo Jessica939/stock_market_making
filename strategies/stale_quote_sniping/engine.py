@@ -174,19 +174,24 @@ def vwap(book, buy, quantity):
 
 def scaled_entry_size(edge, tick, config):
     """Scale only the excess edge above the entry floor, up to a hard cap."""
-    excess_ticks = max(0.0, edge / tick - config["entry_edge_ticks"])
+    net_edge = edge - 2 * config["fee_per_lot"]
+    excess_ticks = max(0.0, net_edge / tick - config["entry_edge_ticks"])
     steps = math.floor((excess_ticks + 1e-9) / config["size_step_ticks"])
     return min(config["max_order_lots"],
                config["order_lots"] + steps * config["lots_per_step"])
 
 
-def sized_execution(book, buy, fair, config):
+def sized_execution(book, buy, fair, config, max_quantity=None):
     """Find a size whose own VWAP still justifies its edge-based size tier."""
     sign = 1 if buy else -1
     base = config["order_lots"]
     execution = vwap(book, buy, base)
     edge = sign * (fair - execution)
     quantity = scaled_entry_size(edge, book["tick"], config)
+    if max_quantity is not None:
+        quantity = min(quantity, max_quantity)
+    available = sum(volume for _, volume in book["asks" if buy else "bids"])
+    quantity = min(quantity, available)
     while quantity > base:
         execution = vwap(book, buy, quantity)
         edge = sign * (fair - execution)
@@ -196,6 +201,19 @@ def sized_execution(book, buy, fair, config):
         quantity = max(base, justified)
     execution = vwap(book, buy, quantity)
     return quantity, execution, sign * (fair - execution)
+
+
+def cap_depth(levels, quantity):
+    capped = []
+    left = quantity
+    for price, volume in levels:
+        take = min(left, volume)
+        if take:
+            capped.append((price, take))
+            left -= take
+        if not left:
+            break
+    return capped
 
 
 class Feed:
@@ -244,18 +262,19 @@ class Feed:
         sign = pending["sign"]
         predicted_basis = CausalBasisModel.predict_snapshot(pending["model"], self.clock())
         fair = books[A]["mid"] - predicted_basis
-        size = pending["volume"]
-        execution = vwap(books[B], sign > 0, size)
         threshold = self.config["entry_edge_ticks"] * books[B]["tick"] + 2 * self.config["fee_per_lot"]
-        edge = sign * (fair - execution)
-        self.pending["recheck"] = dict(fair_B=fair, execution_vwap=execution,
-                                        edge=edge, threshold=threshold,
-                                        observed_at=self.epoch())
-        if edge + 1e-9 < threshold:
-            raise UnusableBook("stale-quote edge disappeared")
         key = "asks" if sign > 0 else "bids"
         filtered = [(price, volume) for price, volume in books[B][key]
                     if sign * (fair - price) + 1e-9 >= threshold]
+        candidate = dict(books[B], **{key: filtered})
+        size, execution, edge = sized_execution(
+            candidate, sign > 0, fair, self.config, max_quantity=pending["volume"])
+        self.pending["recheck"] = dict(fair_B=fair, execution_vwap=execution,
+                                        edge=edge, threshold=threshold, volume=size,
+                                        observed_at=self.epoch())
+        if edge + 1e-9 < threshold:
+            raise UnusableBook("stale-quote edge disappeared")
+        filtered = cap_depth(filtered, size)
         books[B][key] = filtered
         books[B]["execution_" + key] = filtered
         vwap(books[B], sign > 0, size)
