@@ -1,0 +1,21 @@
+{
+  "order_lots": 2,
+  "hold_seconds": 15.0,
+  "execution_delay_seconds": 0.25,
+  "entry_wait_seconds": 1.0,
+  "edge_buffer_ticks": 1.0,
+  "depth_reserve_lots": 200,
+  "max_sweep_ticks": 10,
+  "max_book_age_seconds": 1.0,
+  "decision_seconds": 1.0,
+  "loop_seconds": 0.25,
+  "stop_per_share": null,
+  "fee_per_lot": 0.0,
+  "max_session_loss": 50.0,
+  "max_drawdown": 60.0,
+  "session_seconds": 1800.0,
+  "closeout_seconds": 30.0,
+  "shutdown_grace_seconds": 5.0,
+  "settlement_seconds": 0.6,
+  "max_updates_per_second": 20
+}

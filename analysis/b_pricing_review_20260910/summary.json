@@ -1,0 +1,19 @@
+{
+  "scenarios": 64,
+  "negative_scenarios": 64,
+  "better_than_depth_guard": {
+    "clipped_guard": 0,
+    "mid_guard": 0,
+    "wider_entry_guard": 14
+  },
+  "independently_audited_traces": [
+    "run_20260910T085700Z_2c772790_depth_guard",
+    "run_20260910T085700Z_2c772790_clipped_guard",
+    "run_20260910T085700Z_2c772790_mid_guard",
+    "run_20260910T085700Z_2c772790_wider_entry_guard",
+    "run_20260910T091154Z_4aa539d2_depth_guard",
+    "run_20260910T091154Z_4aa539d2_clipped_guard",
+    "run_20260910T091154Z_4aa539d2_mid_guard",
+    "run_20260910T091154Z_4aa539d2_wider_entry_guard"
+  ]
+}

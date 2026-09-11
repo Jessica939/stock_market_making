@@ -1,0 +1,16 @@
+{
+  "symbols": ["PHILIPS_A", "PHILIPS_B"],
+  "relation_mode": "cycle",
+  "session_seconds": 1800,
+  "closeout_seconds": 120,
+  "loop_seconds": 0.25,
+  "position_limit": 100,
+  "max_net_lots": 60,
+  "max_updates_per_second": 20,
+  "mm_position_limit": 50,
+  "mm_soft_limit": 35,
+  "mm_order_volume": 5,
+  "mm_max_spread_ticks": 20,
+  "pair_position_limit": 20,
+  "pair_lot_size": 10
+}

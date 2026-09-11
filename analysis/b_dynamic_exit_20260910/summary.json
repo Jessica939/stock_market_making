@@ -1,0 +1,41 @@
+{
+  "scenarios": 96,
+  "negative_scenarios": 96,
+  "guard_better_than_base": 16,
+  "guard_comparisons": 16,
+  "guard_1s_worse_than_guard": 16,
+  "guard_3s_worse_than_guard": 15,
+  "max_abs_inventory": 9,
+  "current": {
+    "baseline": {
+      "episode_median_seconds": 1.1530100107192993,
+      "losing_episodes": 100,
+      "worst_episode": -9.500000000000057
+    },
+    "guard": {
+      "episode_median_seconds": 1.4270930290222168,
+      "losing_episodes": 63,
+      "worst_episode": -5.800000000000068
+    },
+    "guard_1s": {
+      "episode_median_seconds": 1.1132240295410156,
+      "losing_episodes": 95,
+      "worst_episode": -8.399999999999977
+    },
+    "guard_3s": {
+      "episode_median_seconds": 1.4152369499206543,
+      "losing_episodes": 67,
+      "worst_episode": -5.800000000000068
+    },
+    "baseline_1s": {
+      "episode_median_seconds": 0.9908180236816406,
+      "losing_episodes": 116,
+      "worst_episode": -11.499999999999886
+    },
+    "baseline_3s": {
+      "episode_median_seconds": 1.097521424293518,
+      "losing_episodes": 101,
+      "worst_episode": -9.500000000000057
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "source": "User clarification in this conversation on 2026-09-10",
+  "official_robot_names": [
+    "GroovyGrapefruits",
+    "DiligentDonuts",
+    "EarnestEspressos",
+    "BrilliantBurritos"
+  ],
+  "name_matching": "Exact names after trimming surrounding whitespace; absence from this list does not establish participant identity.",
+  "additional_user_guidance": "Names of this type are robots. Similar names without an explicit identity are candidates for verification; no exhaustive naming rule was supplied.",
+  "original_order_quantity_rule": {
+    "official_if_strictly_greater_than": 200,
+    "at_or_below_200": "Probably participants, according to user; not a verified identity rule."
+  },
+  "participant_limits_from_user": {
+    "max_single_order_quantity": 200,
+    "max_absolute_position_per_instrument": 100
+  },
+  "data_limitations": [
+    "Aggregated price-level quantity is not original order quantity.",
+    "A matched trade quantity may be a partial fill of a larger order.",
+    "Recorded public trade buyer and seller fields are empty; names cannot be joined to historical trades yet."
+  ]
+}

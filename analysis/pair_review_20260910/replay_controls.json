@@ -1,0 +1,2109 @@
+{
+  "assumptions": "Snapshot replay, 50% displayed liquidity, simulator terminal proof in BOTH variants; previous_controls is a control ablation, not exact historical code.",
+  "results": [
+    {
+      "recording": "philips_20260909T051731_488875Z_ba1b8d3a",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 290,
+        "raw_book": 578,
+        "market_blocked": 235,
+        "boundary_change": 150,
+        "decision": 54,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 289,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260909T051731_488875Z_ba1b8d3a",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 290,
+        "raw_book": 578,
+        "market_blocked": 235,
+        "boundary_change": 150,
+        "decision": 54,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 289,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260909T051731_488875Z_ba1b8d3a",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 290,
+        "raw_book": 578,
+        "market_blocked": 235,
+        "boundary_change": 150,
+        "decision": 54,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 289,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260909T051731_488875Z_ba1b8d3a",
+      "variant": "new_controls",
+      "counts": {
+        "account": 290,
+        "raw_book": 578,
+        "market_blocked": 235,
+        "boundary_change": 150,
+        "decision": 54,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 289,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260909T051956_602734Z_419f4954",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 2963,
+        "raw_book": 5908,
+        "boundary_change": 2010,
+        "market_blocked": 2118,
+        "decision": 823,
+        "order_attempt": 9,
+        "order_response": 9,
+        "fill": 11,
+        "ioc_observation": 9,
+        "ioc_settled": 9,
+        "blocked_order": 2,
+        "pair_unmatched": 2,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -42.10000000000082,
+        "pnl_change": -42.10000000000082,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 2942,
+        "execution_halted": true,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260909T051956_602734Z_419f4954",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 3278,
+        "raw_book": 6542,
+        "boundary_change": 2269,
+        "market_blocked": 2314,
+        "decision": 938,
+        "pair_exit_capacity": 1,
+        "order_attempt": 4,
+        "order_response": 4,
+        "fill": 4,
+        "ioc_observation": 4,
+        "ioc_settled": 4,
+        "pair_market_observation": 6,
+        "pair_exit_requested": 1,
+        "liquidation_blocked": 7,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "market_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -9.5,
+        "pnl_change": -9.5,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 3262,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260909T051956_602734Z_419f4954",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 3276,
+        "raw_book": 6563,
+        "boundary_change": 2270,
+        "market_blocked": 2316,
+        "decision": 940,
+        "pair_exit_capacity": 1,
+        "order_attempt": 4,
+        "order_response": 4,
+        "fill": 4,
+        "ioc_observation": 4,
+        "ioc_settled": 4,
+        "pair_holding_decision": 2,
+        "pair_monitor_unavailable": 5,
+        "pair_market_observation": 4,
+        "pair_exit_requested": 1,
+        "liquidation_blocked": 5,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -5.500000000000114,
+        "pnl_change": -5.500000000000114,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 3262,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260909T051956_602734Z_419f4954",
+      "variant": "new_controls",
+      "counts": {
+        "account": 3276,
+        "raw_book": 6563,
+        "boundary_change": 2270,
+        "market_blocked": 2316,
+        "decision": 940,
+        "pair_exit_capacity": 1,
+        "order_attempt": 4,
+        "order_response": 4,
+        "fill": 4,
+        "ioc_observation": 4,
+        "ioc_settled": 4,
+        "pair_holding_decision": 2,
+        "pair_monitor_unavailable": 5,
+        "pair_market_observation": 4,
+        "pair_exit_requested": 1,
+        "liquidation_blocked": 5,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -5.500000000000114,
+        "pnl_change": -5.500000000000114,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 3262,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260909T060802_306000Z_e21328a0",
+      "excluded": true,
+      "error": "Compressed file ended before the end-of-stream marker was reached"
+    },
+    {
+      "recording": "philips_20260910T060217_177089Z_870ff46d",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 4,
+        "raw_book": 6,
+        "boundary_change": 4,
+        "decision": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 3,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T060217_177089Z_870ff46d",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 4,
+        "raw_book": 6,
+        "boundary_change": 4,
+        "decision": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 3,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T060217_177089Z_870ff46d",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 4,
+        "raw_book": 6,
+        "boundary_change": 4,
+        "decision": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 3,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T060217_177089Z_870ff46d",
+      "variant": "new_controls",
+      "counts": {
+        "account": 4,
+        "raw_book": 6,
+        "boundary_change": 4,
+        "decision": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 3,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T060727_074104Z_81061a72",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 39,
+        "raw_book": 76,
+        "market_blocked": 27,
+        "boundary_change": 27,
+        "decision": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 38,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T060727_074104Z_81061a72",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 39,
+        "raw_book": 76,
+        "market_blocked": 27,
+        "boundary_change": 27,
+        "decision": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 38,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T060727_074104Z_81061a72",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 39,
+        "raw_book": 76,
+        "market_blocked": 27,
+        "boundary_change": 27,
+        "decision": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 38,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T060727_074104Z_81061a72",
+      "variant": "new_controls",
+      "counts": {
+        "account": 39,
+        "raw_book": 76,
+        "market_blocked": 27,
+        "boundary_change": 27,
+        "decision": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 38,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T061456_160355Z_6d508dda",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 56,
+        "raw_book": 110,
+        "boundary_change": 34,
+        "market_blocked": 44,
+        "decision": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 55,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T061456_160355Z_6d508dda",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 56,
+        "raw_book": 110,
+        "boundary_change": 34,
+        "market_blocked": 44,
+        "decision": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 55,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T061456_160355Z_6d508dda",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 56,
+        "raw_book": 110,
+        "boundary_change": 34,
+        "market_blocked": 44,
+        "decision": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 55,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T061456_160355Z_6d508dda",
+      "variant": "new_controls",
+      "counts": {
+        "account": 56,
+        "raw_book": 110,
+        "boundary_change": 34,
+        "market_blocked": 44,
+        "decision": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 55,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T062326_788079Z_ef2f8a0d",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 1306,
+        "raw_book": 2610,
+        "market_blocked": 1000,
+        "boundary_change": 768,
+        "decision": 305,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1305,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T062326_788079Z_ef2f8a0d",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 1306,
+        "raw_book": 2610,
+        "market_blocked": 1000,
+        "boundary_change": 768,
+        "decision": 305,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1305,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T062326_788079Z_ef2f8a0d",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 1306,
+        "raw_book": 2610,
+        "market_blocked": 1000,
+        "boundary_change": 768,
+        "decision": 305,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1305,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T062326_788079Z_ef2f8a0d",
+      "variant": "new_controls",
+      "counts": {
+        "account": 1306,
+        "raw_book": 2610,
+        "market_blocked": 1000,
+        "boundary_change": 768,
+        "decision": 305,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1305,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T063523_524309Z_2955af0d",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 1519,
+        "raw_book": 3000,
+        "boundary_change": 1214,
+        "market_blocked": 867,
+        "decision": 584,
+        "order_attempt": 32,
+        "order_response": 32,
+        "fill": 34,
+        "ioc_observation": 32,
+        "ioc_settled": 32,
+        "blocked_order": 3,
+        "pair_unmatched": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -10.900000000000091,
+        "pnl_change": -10.900000000000091,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1451,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T063523_524309Z_2955af0d",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 1460,
+        "raw_book": 2926,
+        "boundary_change": 1211,
+        "market_blocked": 867,
+        "decision": 579,
+        "pair_exit_capacity": 1,
+        "order_attempt": 4,
+        "order_response": 4,
+        "fill": 4,
+        "ioc_observation": 4,
+        "ioc_settled": 4,
+        "pair_market_observation": 6,
+        "pair_exit_requested": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "market_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -4.5,
+        "pnl_change": -4.5,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1451,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T063523_524309Z_2955af0d",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 1460,
+        "raw_book": 3049,
+        "boundary_change": 1219,
+        "market_blocked": 868,
+        "decision": 582,
+        "pair_exit_capacity": 1,
+        "order_attempt": 4,
+        "order_response": 4,
+        "fill": 4,
+        "ioc_observation": 4,
+        "ioc_settled": 4,
+        "pair_holding_decision": 16,
+        "pair_monitor_unavailable": 4,
+        "pair_market_observation": 5,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 3.5,
+        "pnl_change": 3.5,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1451,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T063523_524309Z_2955af0d",
+      "variant": "new_controls",
+      "counts": {
+        "account": 1460,
+        "raw_book": 3049,
+        "boundary_change": 1219,
+        "market_blocked": 868,
+        "decision": 582,
+        "pair_exit_capacity": 1,
+        "order_attempt": 4,
+        "order_response": 4,
+        "fill": 4,
+        "ioc_observation": 4,
+        "ioc_settled": 4,
+        "pair_holding_decision": 16,
+        "pair_monitor_unavailable": 4,
+        "pair_market_observation": 5,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 3.5,
+        "pnl_change": 3.5,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1451,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T081409_006314Z_270085da",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 468,
+        "raw_book": 920,
+        "boundary_change": 574,
+        "decision": 321,
+        "market_blocked": 121,
+        "order_attempt": 11,
+        "order_response": 11,
+        "fill": 12,
+        "ioc_observation": 11,
+        "ioc_settled": 11,
+        "blocked_order": 2,
+        "pair_unmatched": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -17.400000000000375,
+        "pnl_change": -17.400000000000375,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 443,
+        "execution_halted": true,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T081409_006314Z_270085da",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 594,
+        "raw_book": 1238,
+        "boundary_change": 738,
+        "decision": 389,
+        "market_blocked": 179,
+        "pair_exit_capacity": 2,
+        "order_attempt": 8,
+        "order_response": 8,
+        "fill": 8,
+        "ioc_observation": 8,
+        "ioc_settled": 8,
+        "pair_market_observation": 15,
+        "pair_market_resumed": 3,
+        "pair_exit_requested": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "market_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 8.0,
+        "pnl_change": 8.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 577,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T081409_006314Z_270085da",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 588,
+        "raw_book": 1261,
+        "boundary_change": 738,
+        "decision": 391,
+        "market_blocked": 179,
+        "pair_exit_capacity": 1,
+        "order_attempt": 5,
+        "order_response": 5,
+        "fill": 5,
+        "ioc_observation": 5,
+        "ioc_settled": 5,
+        "pair_monitor_unavailable": 3,
+        "pair_market_observation": 9,
+        "pair_market_resumed": 2,
+        "pair_holding_decision": 3,
+        "pair_exit_requested": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "unmatched_or_untracked_inventory": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 11.0,
+        "pnl_change": 11.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 577,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T081409_006314Z_270085da",
+      "variant": "new_controls",
+      "counts": {
+        "account": 588,
+        "raw_book": 1261,
+        "boundary_change": 738,
+        "decision": 391,
+        "market_blocked": 179,
+        "pair_exit_capacity": 1,
+        "order_attempt": 5,
+        "order_response": 5,
+        "fill": 5,
+        "ioc_observation": 5,
+        "ioc_settled": 5,
+        "pair_monitor_unavailable": 3,
+        "pair_market_observation": 9,
+        "pair_market_resumed": 2,
+        "pair_holding_decision": 3,
+        "pair_exit_requested": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "unmatched_or_untracked_inventory": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 11.0,
+        "pnl_change": 11.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 577,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T081952_472135Z_d1c748f3",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 453,
+        "raw_book": 902,
+        "boundary_change": 482,
+        "decision": 290,
+        "market_blocked": 144,
+        "order_attempt": 8,
+        "order_response": 8,
+        "fill": 8,
+        "ioc_observation": 8,
+        "ioc_settled": 8,
+        "blocked_order": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -51.79999999999882,
+        "pnl_change": -51.79999999999882,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 435,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T081952_472135Z_d1c748f3",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 2441,
+        "raw_book": 5181,
+        "boundary_change": 2711,
+        "decision": 1680,
+        "market_blocked": 622,
+        "pair_exit_capacity": 12,
+        "order_attempt": 46,
+        "order_response": 46,
+        "fill": 45,
+        "ioc_observation": 46,
+        "ioc_settled": 46,
+        "pair_market_observation": 81,
+        "pair_market_resumed": 16,
+        "pair_exit_requested": 5,
+        "liquidation_blocked": 1,
+        "blocked_order": 1,
+        "pair_unmatched": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 2,
+        "market_timeout": 2,
+        "holding_deadline": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 28.199999999999477,
+        "pnl_change": 28.199999999999477,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 2346,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T081952_472135Z_d1c748f3",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 2422,
+        "raw_book": 5233,
+        "boundary_change": 2711,
+        "decision": 1704,
+        "market_blocked": 624,
+        "pair_exit_capacity": 10,
+        "order_attempt": 36,
+        "order_response": 36,
+        "fill": 37,
+        "ioc_observation": 36,
+        "ioc_settled": 36,
+        "pair_holding_decision": 33,
+        "pair_monitor_unavailable": 22,
+        "pair_market_observation": 35,
+        "pair_exit_requested": 4,
+        "liquidation_blocked": 3,
+        "pair_market_resumed": 7,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 2,
+        "cycle_path_lag_timeout": 1,
+        "cycle_forecast_exit": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 19.59999999999934,
+        "pnl_change": 19.59999999999934,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 2346,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T081952_472135Z_d1c748f3",
+      "variant": "new_controls",
+      "counts": {
+        "account": 2416,
+        "raw_book": 5514,
+        "boundary_change": 2733,
+        "decision": 1695,
+        "market_blocked": 625,
+        "pair_exit_capacity": 9,
+        "order_attempt": 33,
+        "order_response": 33,
+        "fill": 34,
+        "ioc_observation": 33,
+        "ioc_settled": 33,
+        "pair_holding_decision": 53,
+        "pair_monitor_unavailable": 28,
+        "pair_market_observation": 48,
+        "pair_exit_requested": 3,
+        "liquidation_blocked": 3,
+        "pair_market_resumed": 11,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 2,
+        "unmatched_or_untracked_inventory": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 51.29999999999927,
+        "pnl_change": 51.29999999999927,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 2346,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T084214_078548Z_6da6ca7d",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 345,
+        "raw_book": 681,
+        "boundary_change": 393,
+        "decision": 233,
+        "market_blocked": 90,
+        "order_attempt": 10,
+        "order_response": 10,
+        "fill": 10,
+        "ioc_observation": 10,
+        "ioc_settled": 10,
+        "blocked_order": 1,
+        "pair_unmatched": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -32.999999999999545,
+        "pnl_change": -32.999999999999545,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 323,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T084214_078548Z_6da6ca7d",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 340,
+        "raw_book": 672,
+        "boundary_change": 398,
+        "decision": 230,
+        "market_blocked": 88,
+        "pair_exit_capacity": 2,
+        "order_attempt": 6,
+        "order_response": 6,
+        "fill": 6,
+        "ioc_observation": 6,
+        "ioc_settled": 6,
+        "blocked_order": 1,
+        "pair_unmatched": 1,
+        "pair_market_observation": 5,
+        "pair_exit_requested": 1,
+        "liquidation_blocked": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -7.000000000000114,
+        "pnl_change": -7.000000000000114,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 323,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T084214_078548Z_6da6ca7d",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 340,
+        "raw_book": 682,
+        "boundary_change": 398,
+        "decision": 232,
+        "market_blocked": 88,
+        "pair_exit_capacity": 2,
+        "order_attempt": 6,
+        "order_response": 6,
+        "fill": 6,
+        "ioc_observation": 6,
+        "ioc_settled": 6,
+        "blocked_order": 1,
+        "pair_unmatched": 1,
+        "pair_holding_decision": 1,
+        "pair_monitor_unavailable": 3,
+        "pair_market_observation": 2,
+        "pair_exit_requested": 1,
+        "liquidation_blocked": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -7.000000000000114,
+        "pnl_change": -7.000000000000114,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 323,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T084214_078548Z_6da6ca7d",
+      "variant": "new_controls",
+      "counts": {
+        "account": 340,
+        "raw_book": 682,
+        "boundary_change": 398,
+        "decision": 232,
+        "market_blocked": 88,
+        "pair_exit_capacity": 2,
+        "order_attempt": 6,
+        "order_response": 6,
+        "fill": 6,
+        "ioc_observation": 6,
+        "ioc_settled": 6,
+        "blocked_order": 1,
+        "pair_unmatched": 1,
+        "pair_holding_decision": 1,
+        "pair_monitor_unavailable": 3,
+        "pair_market_observation": 2,
+        "pair_exit_requested": 1,
+        "liquidation_blocked": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -7.000000000000114,
+        "pnl_change": -7.000000000000114,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 323,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T084557_195020Z_1f2e438c",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 549,
+        "raw_book": 1107,
+        "boundary_change": 674,
+        "market_blocked": 145,
+        "decision": 384,
+        "blocked_order": 3,
+        "order_attempt": 8,
+        "order_response": 8,
+        "fill": 8,
+        "ioc_observation": 8,
+        "ioc_settled": 8,
+        "pair_unmatched": 2,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 529,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T084557_195020Z_1f2e438c",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 549,
+        "raw_book": 1115,
+        "boundary_change": 674,
+        "market_blocked": 145,
+        "decision": 384,
+        "pair_exit_capacity": 4,
+        "blocked_order": 3,
+        "order_attempt": 8,
+        "order_response": 8,
+        "fill": 8,
+        "ioc_observation": 8,
+        "ioc_settled": 8,
+        "pair_unmatched": 2,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.0,
+        "pnl_change": 0.0,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 529,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T084557_195020Z_1f2e438c",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 548,
+        "raw_book": 1214,
+        "boundary_change": 686,
+        "market_blocked": 135,
+        "decision": 389,
+        "pair_exit_capacity": 3,
+        "blocked_order": 2,
+        "order_attempt": 8,
+        "order_response": 8,
+        "fill": 8,
+        "ioc_observation": 8,
+        "ioc_settled": 8,
+        "pair_monitor_unavailable": 7,
+        "pair_market_observation": 10,
+        "pair_exit_requested": 2,
+        "pair_holding_decision": 5,
+        "pair_market_resumed": 2,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1,
+        "cycle_path_lag_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -1.9999999999998863,
+        "pnl_change": -1.9999999999998863,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 529,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T084557_195020Z_1f2e438c",
+      "variant": "new_controls",
+      "counts": {
+        "account": 548,
+        "raw_book": 1238,
+        "boundary_change": 692,
+        "market_blocked": 135,
+        "decision": 387,
+        "pair_exit_capacity": 3,
+        "blocked_order": 2,
+        "order_attempt": 8,
+        "order_response": 8,
+        "fill": 8,
+        "ioc_observation": 8,
+        "ioc_settled": 8,
+        "pair_monitor_unavailable": 10,
+        "pair_market_observation": 15,
+        "pair_exit_requested": 1,
+        "pair_holding_decision": 6,
+        "pair_market_resumed": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 7.500000000000114,
+        "pnl_change": 7.500000000000114,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 529,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T085700_968660Z_ad33f82a",
+      "variant": "previous_controls",
+      "counts": {
+        "account": 1557,
+        "raw_book": 3087,
+        "boundary_change": 1858,
+        "decision": 993,
+        "market_blocked": 473,
+        "order_attempt": 38,
+        "order_response": 38,
+        "fill": 40,
+        "ioc_observation": 38,
+        "ioc_settled": 38,
+        "blocked_order": 12,
+        "pair_unmatched": 8,
+        "session_end": 1
+      },
+      "exit_reasons": {},
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": -50.699999999998454,
+        "pnl_change": -50.699999999998454,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1468,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T085700_968660Z_ad33f82a",
+      "variant": "three_second_controls",
+      "counts": {
+        "account": 1624,
+        "raw_book": 3301,
+        "boundary_change": 2007,
+        "decision": 1065,
+        "market_blocked": 503,
+        "pair_exit_capacity": 8,
+        "order_attempt": 22,
+        "order_response": 22,
+        "fill": 22,
+        "ioc_observation": 22,
+        "ioc_settled": 22,
+        "blocked_order": 5,
+        "pair_unmatched": 5,
+        "pair_market_observation": 29,
+        "pair_market_resumed": 3,
+        "pair_exit_requested": 3,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "market_timeout": 3
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 0.7000000000000739,
+        "pnl_change": 0.7000000000000739,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1574,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T085700_968660Z_ad33f82a",
+      "variant": "independent_45s",
+      "counts": {
+        "account": 1621,
+        "raw_book": 3412,
+        "boundary_change": 2014,
+        "decision": 1062,
+        "market_blocked": 508,
+        "pair_exit_capacity": 7,
+        "order_attempt": 20,
+        "order_response": 20,
+        "fill": 20,
+        "ioc_observation": 20,
+        "ioc_settled": 20,
+        "blocked_order": 5,
+        "pair_unmatched": 4,
+        "pair_holding_decision": 24,
+        "pair_monitor_unavailable": 17,
+        "pair_market_observation": 18,
+        "pair_exit_requested": 1,
+        "liquidation_blocked": 1,
+        "pair_market_resumed": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 5.7000000000000455,
+        "pnl_change": 5.7000000000000455,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1574,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T085700_968660Z_ad33f82a",
+      "variant": "new_controls",
+      "counts": {
+        "account": 1621,
+        "raw_book": 3412,
+        "boundary_change": 2014,
+        "decision": 1062,
+        "market_blocked": 508,
+        "pair_exit_capacity": 7,
+        "order_attempt": 20,
+        "order_response": 20,
+        "fill": 20,
+        "ioc_observation": 20,
+        "ioc_settled": 20,
+        "blocked_order": 5,
+        "pair_unmatched": 4,
+        "pair_holding_decision": 24,
+        "pair_monitor_unavailable": 17,
+        "pair_market_observation": 18,
+        "pair_exit_requested": 1,
+        "liquidation_blocked": 1,
+        "pair_market_resumed": 1,
+        "session_end": 1
+      },
+      "exit_reasons": {
+        "valuation_timeout": 1
+      },
+      "summary": {
+        "final_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "unmanaged_positions": {},
+        "flat": true,
+        "reconciled_positions": {
+          "PHILIPS_A": 0,
+          "PHILIPS_B": 0
+        },
+        "final_snapshot_agrees": true,
+        "flat_scope": "observed account positions, no unresolved IOC or hard fault",
+        "unresolved_ioc": null,
+        "hard_fault": false,
+        "fault_reason": null,
+        "liquidation_equity": 5.7000000000000455,
+        "pnl_change": 5.7000000000000455,
+        "pnl_scope": "selected instruments, baseline after inherited-position cleanup",
+        "cycles": 1574,
+        "execution_halted": false,
+        "fatal_error": null,
+        "journal_failed": false
+      }
+    },
+    {
+      "recording": "philips_20260910T091154_364816Z_57b26f1c",
+      "excluded": true,
+      "error": "Compressed file ended before the end-of-stream marker was reached"
+    }
+  ]
+}

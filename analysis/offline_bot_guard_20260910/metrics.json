@@ -1,0 +1,1115 @@
+{
+  "settings": {
+    "threshold": 0.6,
+    "radius_ticks": 4,
+    "official_min_exclusive": 200,
+    "boundary_min": 15000,
+    "size_fraction": 0.5,
+    "tick": 0.1,
+    "max_age_seconds": 2.0,
+    "max_spread_ticks": 20
+  },
+  "current_version": "baseline_cycle_risk_only_v2",
+  "issues": [
+    {
+      "file": "data\\market\\philips_20260909T060802_306000Z_e21328a0\\orderbooks_00001.jsonl.gz",
+      "reason": "incomplete_gzip_tail"
+    },
+    {
+      "file": "data\\market\\philips_20260910T091154_364816Z_57b26f1c\\orderbooks_00001.jsonl.gz",
+      "reason": "incomplete_gzip_tail"
+    }
+  ],
+  "runs": [
+    {
+      "run": "run_20260909T051956Z_2e8dad67",
+      "version": "unversioned",
+      "quotes": 5586,
+      "quote_statuses": {
+        "ok": 5530,
+        "missing_or_stale": 46,
+        "no_exact_prior_book": 9,
+        "no_official_near_depth": 1
+      },
+      "fills": {
+        "total": 170,
+        "supported": 166,
+        "signal_unavailable": 4
+      }
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "quotes": 1131,
+      "quote_statuses": {
+        "ok": 912,
+        "own_ledger_inconsistent_or_empty": 213,
+        "no_official_near_depth": 5,
+        "no_exact_prior_book": 1
+      },
+      "fills": {
+        "total": 529,
+        "supported": 478,
+        "signal_unavailable": 51
+      }
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "quotes": 1046,
+      "quote_statuses": {
+        "ok": 1035,
+        "no_exact_prior_book": 6,
+        "own_ledger_inconsistent_or_empty": 3,
+        "no_official_near_depth": 2
+      },
+      "fills": {
+        "total": 497,
+        "supported": 486,
+        "signal_unavailable": 11
+      }
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "quotes": 3114,
+      "quote_statuses": {
+        "ok": 3051,
+        "no_exact_prior_book": 22,
+        "no_official_near_depth": 13,
+        "own_ledger_inconsistent_or_empty": 28
+      },
+      "fills": {
+        "total": 1477,
+        "supported": 1444,
+        "signal_unavailable": 33
+      }
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "quotes": 1319,
+      "quote_statuses": {
+        "ok": 1289,
+        "no_official_near_depth": 4,
+        "no_exact_prior_book": 11,
+        "own_ledger_inconsistent_or_empty": 15
+      },
+      "fills": {
+        "total": 594,
+        "supported": 579,
+        "signal_unavailable": 15
+      }
+    }
+  ],
+  "quote_outcomes": [
+    {
+      "run": "run_20260909T051956Z_2e8dad67",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "quotes": 5586,
+      "supported_quotes": 5530,
+      "supported_fraction": 0.9899749373433584,
+      "affected_quotes": 117,
+      "base_target_lot_sum": 55348.0,
+      "candidate_target_lot_sum": 55069.0,
+      "target_lot_reduction_fraction": 0.005040832550408325,
+      "changed_bid_quotes": 42,
+      "changed_ask_quotes": 75,
+      "horizons": {
+        "5": {
+          "valid_quotes": 5520,
+          "removed_target_lots": 279.0,
+          "original_quote_mark": 0.49862421383647826,
+          "candidate_quote_mark": 0.49914916294540346,
+          "removed_quote_mark": 0.3962365591397795
+        },
+        "15": {
+          "valid_quotes": 5501,
+          "removed_target_lots": 279.0,
+          "original_quote_mark": 0.49717278831688283,
+          "candidate_quote_mark": 0.49801206041270973,
+          "removed_quote_mark": 0.3340501792114689
+        }
+      }
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "quotes": 573,
+      "supported_quotes": 369,
+      "supported_fraction": 0.643979057591623,
+      "affected_quotes": 24,
+      "base_target_lot_sum": 5400.0,
+      "candidate_target_lot_sum": 5346.0,
+      "target_lot_reduction_fraction": 0.01,
+      "changed_bid_quotes": 11,
+      "changed_ask_quotes": 13,
+      "horizons": {
+        "5": {
+          "valid_quotes": 368,
+          "removed_target_lots": 54.0,
+          "original_quote_mark": 0.21441535257363933,
+          "candidate_quote_mark": 0.21422739643181185,
+          "removed_quote_mark": 0.22592592592592783
+        },
+        "15": {
+          "valid_quotes": 368,
+          "removed_target_lots": 54.0,
+          "original_quote_mark": 0.19036001190122023,
+          "candidate_quote_mark": 0.1915633504687031,
+          "removed_quote_mark": 0.11666666666666846
+        }
+      }
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "quotes": 558,
+      "supported_quotes": 543,
+      "supported_fraction": 0.9731182795698925,
+      "affected_quotes": 53,
+      "base_target_lot_sum": 5402.0,
+      "candidate_target_lot_sum": 5267.0,
+      "target_lot_reduction_fraction": 0.02499074416882636,
+      "changed_bid_quotes": 23,
+      "changed_ask_quotes": 30,
+      "horizons": {
+        "5": {
+          "valid_quotes": 533,
+          "removed_target_lots": 132.0,
+          "original_quote_mark": 0.28716058960434476,
+          "candidate_quote_mark": 0.30073646496815326,
+          "removed_quote_mark": -0.2295454545454559
+        },
+        "15": {
+          "valid_quotes": 514,
+          "removed_target_lots": 129.0,
+          "original_quote_mark": 0.3224124043495774,
+          "candidate_quote_mark": 0.3319412859210258,
+          "removed_quote_mark": -0.034883720930235645
+        }
+      }
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "quotes": 528,
+      "supported_quotes": 521,
+      "supported_fraction": 0.9867424242424242,
+      "affected_quotes": 68,
+      "base_target_lot_sum": 5087.0,
+      "candidate_target_lot_sum": 4907.0,
+      "target_lot_reduction_fraction": 0.03538431295459013,
+      "changed_bid_quotes": 15,
+      "changed_ask_quotes": 53,
+      "horizons": {
+        "5": {
+          "valid_quotes": 511,
+          "removed_target_lots": 180.0,
+          "original_quote_mark": 0.27312828814245266,
+          "candidate_quote_mark": 0.2769949601007985,
+          "removed_quote_mark": 0.1708333333333259
+        },
+        "15": {
+          "valid_quotes": 494,
+          "removed_target_lots": 180.0,
+          "original_quote_mark": 0.2720446950710111,
+          "candidate_quote_mark": 0.2835611979166673,
+          "removed_quote_mark": -0.022777777777786747
+        }
+      }
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "quotes": 518,
+      "supported_quotes": 514,
+      "supported_fraction": 0.9922779922779923,
+      "affected_quotes": 53,
+      "base_target_lot_sum": 4854.0,
+      "candidate_target_lot_sum": 4720.0,
+      "target_lot_reduction_fraction": 0.027606098063452822,
+      "changed_bid_quotes": 24,
+      "changed_ask_quotes": 29,
+      "horizons": {
+        "5": {
+          "valid_quotes": 504,
+          "removed_target_lots": 134.0,
+          "original_quote_mark": 0.2866165890816756,
+          "candidate_quote_mark": 0.29917247386759566,
+          "removed_quote_mark": -0.14365671641791405
+        },
+        "15": {
+          "valid_quotes": 486,
+          "removed_target_lots": 122.0,
+          "original_quote_mark": 0.33388937664618074,
+          "candidate_quote_mark": 0.3549165539016687,
+          "removed_quote_mark": -0.43032786885245855
+        }
+      }
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_A",
+      "quotes": 1573,
+      "supported_quotes": 1542,
+      "supported_fraction": 0.9802924348378894,
+      "affected_quotes": 118,
+      "base_target_lot_sum": 14611.0,
+      "candidate_target_lot_sum": 14326.0,
+      "target_lot_reduction_fraction": 0.01950585175552666,
+      "changed_bid_quotes": 64,
+      "changed_ask_quotes": 54,
+      "horizons": {
+        "5": {
+          "valid_quotes": 1532,
+          "removed_target_lots": 285.0,
+          "original_quote_mark": 0.243785092644582,
+          "candidate_quote_mark": 0.24443887416744287,
+          "removed_quote_mark": 0.21175438596491117
+        },
+        "15": {
+          "valid_quotes": 1515,
+          "removed_target_lots": 285.0,
+          "original_quote_mark": 0.24037698412698444,
+          "candidate_quote_mark": 0.24083315252766357,
+          "removed_quote_mark": 0.21824561403508888
+        }
+      }
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_B",
+      "quotes": 1541,
+      "supported_quotes": 1509,
+      "supported_fraction": 0.9792342634652823,
+      "affected_quotes": 138,
+      "base_target_lot_sum": 5685.0,
+      "candidate_target_lot_sum": 5547.0,
+      "target_lot_reduction_fraction": 0.024274406332453827,
+      "changed_bid_quotes": 59,
+      "changed_ask_quotes": 79,
+      "horizons": {
+        "5": {
+          "valid_quotes": 1499,
+          "removed_target_lots": 135.0,
+          "original_quote_mark": 0.27624954726548373,
+          "candidate_quote_mark": 0.2753666233525156,
+          "removed_quote_mark": 0.31148148148147925
+        },
+        "15": {
+          "valid_quotes": 1481,
+          "removed_target_lots": 129.0,
+          "original_quote_mark": 0.25059786607799855,
+          "candidate_quote_mark": 0.23024307518371973,
+          "removed_quote_mark": 1.0879844961240293
+        }
+      }
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_A",
+      "quotes": 664,
+      "supported_quotes": 653,
+      "supported_fraction": 0.983433734939759,
+      "affected_quotes": 28,
+      "base_target_lot_sum": 5977.0,
+      "candidate_target_lot_sum": 5907.0,
+      "target_lot_reduction_fraction": 0.011711560983771123,
+      "changed_bid_quotes": 3,
+      "changed_ask_quotes": 25,
+      "horizons": {
+        "5": {
+          "valid_quotes": 653,
+          "removed_target_lots": 70.0,
+          "original_quote_mark": 0.23441757493188073,
+          "candidate_quote_mark": 0.23525508445363744,
+          "removed_quote_mark": 0.16499999999999368
+        },
+        "15": {
+          "valid_quotes": 653,
+          "removed_target_lots": 70.0,
+          "original_quote_mark": 0.2288402588555864,
+          "candidate_quote_mark": 0.22956739055498177,
+          "removed_quote_mark": 0.16857142857141857
+        }
+      }
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_B",
+      "quotes": 655,
+      "supported_quotes": 636,
+      "supported_fraction": 0.9709923664122138,
+      "affected_quotes": 43,
+      "base_target_lot_sum": 1965.0,
+      "candidate_target_lot_sum": 1922.0,
+      "target_lot_reduction_fraction": 0.02188295165394402,
+      "changed_bid_quotes": 20,
+      "changed_ask_quotes": 23,
+      "horizons": {
+        "5": {
+          "valid_quotes": 636,
+          "removed_target_lots": 43.0,
+          "original_quote_mark": 0.33783359497645254,
+          "candidate_quote_mark": 0.33075481798715245,
+          "removed_quote_mark": 0.645348837209299
+        },
+        "15": {
+          "valid_quotes": 636,
+          "removed_target_lots": 43.0,
+          "original_quote_mark": 0.4205128205128207,
+          "candidate_quote_mark": 0.40131156316916505,
+          "removed_quote_mark": 1.2546511627907007
+        }
+      }
+    }
+  ],
+  "fill_outcomes": [
+    {
+      "run": "run_20260909T051956Z_2e8dad67",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 133,
+      "volume": 655,
+      "mark_per_share": 0.22137404580152836,
+      "mark_total": 145.00000000000108,
+      "negative_volume_fraction": 0.29923664122137406,
+      "median_signal_age": 1.400024175643921
+    },
+    {
+      "run": "run_20260909T051956Z_2e8dad67",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 1,
+      "volume": 5,
+      "mark_per_share": -0.25,
+      "mark_total": -1.25,
+      "negative_volume_fraction": 1.0,
+      "median_signal_age": 0.1212320327758789
+    },
+    {
+      "run": "run_20260909T051956Z_2e8dad67",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 132,
+      "volume": 650,
+      "mark_per_share": 0.22500000000000167,
+      "mark_total": 146.25000000000108,
+      "negative_volume_fraction": 0.29384615384615387,
+      "median_signal_age": 1.4064465761184692
+    },
+    {
+      "run": "run_20260909T051956Z_2e8dad67",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 150,
+      "volume": 740,
+      "mark_per_share": 0.09040540540540641,
+      "mark_total": 66.90000000000074,
+      "negative_volume_fraction": 0.41621621621621624,
+      "median_signal_age": 1.8083319664001465
+    },
+    {
+      "run": "run_20260909T051956Z_2e8dad67",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 1,
+      "volume": 5,
+      "mark_per_share": 0.4000000000000057,
+      "mark_total": 2.0000000000000284,
+      "negative_volume_fraction": 0.0,
+      "median_signal_age": 0.1212320327758789
+    },
+    {
+      "run": "run_20260909T051956Z_2e8dad67",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 149,
+      "volume": 735,
+      "mark_per_share": 0.08829931972789214,
+      "mark_total": 64.90000000000072,
+      "negative_volume_fraction": 0.41904761904761906,
+      "median_signal_age": 1.8140640258789062
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 113,
+      "volume": 354,
+      "mark_per_share": 0.08022598870056315,
+      "mark_total": 28.399999999999352,
+      "negative_volume_fraction": 0.2853107344632768,
+      "median_signal_age": 0.5479459762573242
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 1,
+      "volume": 3,
+      "mark_per_share": 0.1500000000000341,
+      "mark_total": 0.4500000000001023,
+      "negative_volume_fraction": 0.0,
+      "median_signal_age": 0.19312095642089844
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 112,
+      "volume": 351,
+      "mark_per_share": 0.0796296296296275,
+      "mark_total": 27.94999999999925,
+      "negative_volume_fraction": 0.28774928774928776,
+      "median_signal_age": 0.5520230531692505
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 113,
+      "volume": 354,
+      "mark_per_share": 0.0819209039548,
+      "mark_total": 28.999999999999204,
+      "negative_volume_fraction": 0.4124293785310734,
+      "median_signal_age": 0.5479459762573242
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 1,
+      "volume": 3,
+      "mark_per_share": -0.5999999999999659,
+      "mark_total": -1.7999999999998977,
+      "negative_volume_fraction": 1.0,
+      "median_signal_age": 0.19312095642089844
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 112,
+      "volume": 351,
+      "mark_per_share": 0.08774928774928518,
+      "mark_total": 30.799999999999102,
+      "negative_volume_fraction": 0.4074074074074074,
+      "median_signal_age": 0.5520230531692505
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 359,
+      "volume": 1660,
+      "mark_per_share": -0.2846686746987948,
+      "mark_total": -472.5499999999994,
+      "negative_volume_fraction": 0.577710843373494,
+      "median_signal_age": 0.4052090644836426
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 26,
+      "volume": 125,
+      "mark_per_share": -0.6387999999999938,
+      "mark_total": -79.84999999999923,
+      "negative_volume_fraction": 0.648,
+      "median_signal_age": 0.42402052879333496
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 333,
+      "volume": 1535,
+      "mark_per_share": -0.25583061889250824,
+      "mark_total": -392.70000000000016,
+      "negative_volume_fraction": 0.5719869706840391,
+      "median_signal_age": 0.4035491943359375
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 343,
+      "volume": 1585,
+      "mark_per_share": -0.19097791798107253,
+      "mark_total": -302.69999999999993,
+      "negative_volume_fraction": 0.5217665615141955,
+      "median_signal_age": 0.4052090644836426
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 26,
+      "volume": 125,
+      "mark_per_share": 0.21240000000000395,
+      "mark_total": 26.550000000000495,
+      "negative_volume_fraction": 0.392,
+      "median_signal_age": 0.42402052879333496
+    },
+    {
+      "run": "run_20260910T081408Z_976e5798",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 317,
+      "volume": 1460,
+      "mark_per_share": -0.22551369863013726,
+      "mark_total": -329.2500000000004,
+      "negative_volume_fraction": 0.5328767123287671,
+      "median_signal_age": 0.4035491943359375
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 134,
+      "volume": 446,
+      "mark_per_share": 0.1927130044843046,
+      "mark_total": 85.94999999999985,
+      "negative_volume_fraction": 0.289237668161435,
+      "median_signal_age": 0.4966670274734497
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 4,
+      "volume": 20,
+      "mark_per_share": -0.13750000000000995,
+      "mark_total": -2.750000000000199,
+      "negative_volume_fraction": 0.5,
+      "median_signal_age": 0.6620346307754517
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 130,
+      "volume": 426,
+      "mark_per_share": 0.20821596244131466,
+      "mark_total": 88.70000000000005,
+      "negative_volume_fraction": 0.2793427230046948,
+      "median_signal_age": 0.47162914276123047
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 126,
+      "volume": 429,
+      "mark_per_share": 0.26107226107226067,
+      "mark_total": 111.99999999999983,
+      "negative_volume_fraction": 0.38461538461538464,
+      "median_signal_age": 0.4966670274734497
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 4,
+      "volume": 20,
+      "mark_per_share": -0.16250000000000142,
+      "mark_total": -3.2500000000000284,
+      "negative_volume_fraction": 0.75,
+      "median_signal_age": 0.6620346307754517
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 122,
+      "volume": 409,
+      "mark_per_share": 0.28178484107579427,
+      "mark_total": 115.24999999999986,
+      "negative_volume_fraction": 0.36674816625916873,
+      "median_signal_age": 0.47162914276123047
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 343,
+      "volume": 1551,
+      "mark_per_share": -0.16760154738878172,
+      "mark_total": -259.95000000000044,
+      "negative_volume_fraction": 0.5448098001289491,
+      "median_signal_age": 0.3414120674133301
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 31,
+      "volume": 152,
+      "mark_per_share": -0.4812499999999974,
+      "mark_total": -73.14999999999961,
+      "negative_volume_fraction": 0.7105263157894737,
+      "median_signal_age": 0.22922992706298828
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 312,
+      "volume": 1399,
+      "mark_per_share": -0.1335239456754831,
+      "mark_total": -186.80000000000084,
+      "negative_volume_fraction": 0.5268048606147248,
+      "median_signal_age": 0.35396504402160645
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 329,
+      "volume": 1483,
+      "mark_per_share": -0.20347269049224626,
+      "mark_total": -301.7500000000012,
+      "negative_volume_fraction": 0.5367498314227916,
+      "median_signal_age": 0.3456552028656006
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 28,
+      "volume": 138,
+      "mark_per_share": -0.28586956521738627,
+      "mark_total": -39.44999999999931,
+      "negative_volume_fraction": 0.572463768115942,
+      "median_signal_age": 0.18858599662780762
+    },
+    {
+      "run": "run_20260910T084557Z_76c092d2",
+      "version": "unversioned",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 301,
+      "volume": 1345,
+      "mark_per_share": -0.19501858736059619,
+      "mark_total": -262.3000000000019,
+      "negative_volume_fraction": 0.533085501858736,
+      "median_signal_age": 0.359158992767334
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 477,
+      "volume": 1579,
+      "mark_per_share": 0.16842938568714363,
+      "mark_total": 265.9499999999998,
+      "negative_volume_fraction": 0.2558581380620646,
+      "median_signal_age": 0.4912590980529785
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 17,
+      "volume": 48,
+      "mark_per_share": -0.07291666666666725,
+      "mark_total": -3.5000000000000284,
+      "negative_volume_fraction": 0.5416666666666666,
+      "median_signal_age": 0.5501329898834229
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 460,
+      "volume": 1531,
+      "mark_per_share": 0.17599608099281502,
+      "mark_total": 269.4499999999998,
+      "negative_volume_fraction": 0.24689745264532986,
+      "median_signal_age": 0.4907301664352417
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 472,
+      "volume": 1570,
+      "mark_per_share": 0.19331210191082737,
+      "mark_total": 303.499999999999,
+      "negative_volume_fraction": 0.32420382165605094,
+      "median_signal_age": 0.4907301664352417
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 17,
+      "volume": 48,
+      "mark_per_share": -0.45416666666666156,
+      "mark_total": -21.799999999999756,
+      "negative_volume_fraction": 0.625,
+      "median_signal_age": 0.5501329898834229
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 455,
+      "volume": 1522,
+      "mark_per_share": 0.21373193166885596,
+      "mark_total": 325.29999999999876,
+      "negative_volume_fraction": 0.3147174770039422,
+      "median_signal_age": 0.48674893379211426
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 961,
+      "volume": 1922,
+      "mark_per_share": -0.20385015608740872,
+      "mark_total": -391.79999999999956,
+      "negative_volume_fraction": 0.5431841831425598,
+      "median_signal_age": 0.36973094940185547
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 58,
+      "volume": 112,
+      "mark_per_share": -0.2093750000000027,
+      "mark_total": -23.4500000000003,
+      "negative_volume_fraction": 0.5892857142857143,
+      "median_signal_age": 0.38774943351745605
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 903,
+      "volume": 1810,
+      "mark_per_share": -0.20350828729281725,
+      "mark_total": -368.3499999999992,
+      "negative_volume_fraction": 0.5403314917127072,
+      "median_signal_age": 0.3690152168273926
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 949,
+      "volume": 1892,
+      "mark_per_share": -0.2806289640591963,
+      "mark_total": -530.9499999999994,
+      "negative_volume_fraction": 0.5507399577167019,
+      "median_signal_age": 0.36815500259399414
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 55,
+      "volume": 106,
+      "mark_per_share": 0.7650943396226387,
+      "mark_total": 81.09999999999971,
+      "negative_volume_fraction": 0.2830188679245283,
+      "median_signal_age": 0.36273908615112305
+    },
+    {
+      "run": "run_20260910T085700Z_2c772790",
+      "version": "baseline_cycle_protected_v1",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 894,
+      "volume": 1786,
+      "mark_per_share": -0.3426931690929446,
+      "mark_total": -612.049999999999,
+      "negative_volume_fraction": 0.5666293393057111,
+      "median_signal_age": 0.36858510971069336
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 226,
+      "volume": 684,
+      "mark_per_share": 0.15460526315789141,
+      "mark_total": 105.74999999999773,
+      "negative_volume_fraction": 0.30409356725146197,
+      "median_signal_age": 0.4780009984970093
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 3,
+      "volume": 7,
+      "mark_per_share": 0.2928571428571323,
+      "mark_total": 2.049999999999926,
+      "negative_volume_fraction": 0.0,
+      "median_signal_age": 0.1573348045349121
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_A",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 223,
+      "volume": 677,
+      "mark_per_share": 0.15317577548005584,
+      "mark_total": 103.6999999999978,
+      "negative_volume_fraction": 0.3072378138847858,
+      "median_signal_age": 0.4815089702606201
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 224,
+      "volume": 676,
+      "mark_per_share": 0.2370562130177519,
+      "mark_total": 160.25000000000028,
+      "negative_volume_fraction": 0.3801775147928994,
+      "median_signal_age": 0.4670945405960083
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 3,
+      "volume": 7,
+      "mark_per_share": 0.9642857142857143,
+      "mark_total": 6.75,
+      "negative_volume_fraction": 0.14285714285714285,
+      "median_signal_age": 0.1573348045349121
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_A",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 221,
+      "volume": 669,
+      "mark_per_share": 0.22944693572496305,
+      "mark_total": 153.50000000000028,
+      "negative_volume_fraction": 0.38266068759342303,
+      "median_signal_age": 0.47449302673339844
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "all_supported",
+      "fill_count": 347,
+      "volume": 600,
+      "mark_per_share": -0.21491666666666817,
+      "mark_total": -128.9500000000009,
+      "negative_volume_fraction": 0.52,
+      "median_signal_age": 0.3799870014190674
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "affected",
+      "fill_count": 11,
+      "volume": 22,
+      "mark_per_share": 0.6681818181818125,
+      "mark_total": 14.699999999999875,
+      "negative_volume_fraction": 0.18181818181818182,
+      "median_signal_age": 0.2925150394439697
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_B",
+      "horizon": 5,
+      "group": "unchanged",
+      "fill_count": 336,
+      "volume": 578,
+      "mark_per_share": -0.24852941176470722,
+      "mark_total": -143.65000000000077,
+      "negative_volume_fraction": 0.532871972318339,
+      "median_signal_age": 0.3803364038467407
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "all_supported",
+      "fill_count": 339,
+      "volume": 588,
+      "mark_per_share": -0.2177721088435376,
+      "mark_total": -128.0500000000001,
+      "negative_volume_fraction": 0.54421768707483,
+      "median_signal_age": 0.37776899337768555
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "affected",
+      "fill_count": 11,
+      "volume": 22,
+      "mark_per_share": 1.4318181818181897,
+      "mark_total": 31.50000000000017,
+      "negative_volume_fraction": 0.0,
+      "median_signal_age": 0.2925150394439697
+    },
+    {
+      "run": "run_20260910T091154Z_4aa539d2",
+      "version": "baseline_cycle_risk_only_v2",
+      "instrument": "PHILIPS_B",
+      "horizon": 15,
+      "group": "unchanged",
+      "fill_count": 328,
+      "volume": 566,
+      "mark_per_share": -0.28189045936395807,
+      "mark_total": -159.55000000000027,
+      "negative_volume_fraction": 0.5653710247349824,
+      "median_signal_age": 0.37797749042510986
+    }
+  ],
+  "source_logs": [
+    {
+      "path": "data\\runs\\baseline\\run_20260909T051956Z_2e8dad67\\trading_20260909T051956Z_2e8dad67.jsonl",
+      "sha256": "637f868a9df15ca80a3977986e8d96aaf36431fb432eaf05ba99bf03e449e40d",
+      "version": "unversioned"
+    },
+    {
+      "path": "data\\runs\\baseline\\run_20260910T081408Z_976e5798\\trading_20260910T081408Z_976e5798.jsonl",
+      "sha256": "e38970568c3ec3801d4351bfc1d82fc91dcb51c2305b4c57e4e517c60d8fe13d",
+      "version": "unversioned"
+    },
+    {
+      "path": "data\\runs\\baseline\\run_20260910T084557Z_76c092d2\\trading_20260910T084557Z_76c092d2.jsonl",
+      "sha256": "8ff18c140181198dd130e40f1923790b6f7184acd8ed2b706381de344321c232",
+      "version": "unversioned"
+    },
+    {
+      "path": "data\\runs\\baseline\\run_20260910T085700Z_2c772790\\trading_20260910T085700Z_2c772790.jsonl",
+      "sha256": "aa7cb657ffd47be71fae889b656bc342a2eaa15f96e872e5e513fabb3c14964d",
+      "version": "baseline_cycle_protected_v1"
+    },
+    {
+      "path": "data\\runs\\baseline\\run_20260910T091154Z_4aa539d2\\trading_20260910T091154Z_4aa539d2.jsonl",
+      "sha256": "ca62c7fc65f601007cecf75570292e3a5ef2d1d83ebee1504b932d726e48c715",
+      "version": "baseline_cycle_risk_only_v2"
+    }
+  ],
+  "assumptions": [
+    "Frozen recorded quote prices, positions and cycle state.",
+    "Own-order ledger uses only order acknowledgements, cancel acknowledgements and fill reports available before source-book observation.",
+    "Unknown inherited orders and read races cannot be fully reconstructed; exact external top agreement is required.",
+    "Order-origin fill classification; later replacement/cancellation paths are not simulated.",
+    "No hypothetical fills or strategy profit claimed."
+  ]
+}

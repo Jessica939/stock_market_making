@@ -1,0 +1,884 @@
+[
+  {
+    "run": "run_20260908T041338Z_cf446e22",
+    "source": "data\\runs\\baseline\\run_20260908T041338Z_cf446e22\\trading_20260908T041338Z_cf446e22.jsonl",
+    "version": "unversioned",
+    "start_beijing": "2026-09-08 12:13:38",
+    "end_beijing": "2026-09-08 12:14:13",
+    "minutes": 0.5806790500000001,
+    "session_end_present": true,
+    "instruments": {
+      "PHILIPS_A": {
+        "pnl_mid_change": 15.100000000000023,
+        "initial_position": 12,
+        "final_position": 8,
+        "initial_mid": 116.75,
+        "final_mid": 117.15,
+        "inherited_inventory_mtm": 4.800000000000068,
+        "new_fills_marked_at_end": 10.299999999999955,
+        "max_abs_observed_position": 12,
+        "observed_mid_drawdown": 2.0999999999997954,
+        "fill_count": 18,
+        "fill_volume": 84,
+        "markouts": {
+          "1": {
+            "per_share": 0.1734177215189863,
+            "fills": 17,
+            "volume": 79,
+            "coverage": 0.9444444444444444,
+            "status_counts": {
+              "ok": 16,
+              "late": 1
+            }
+          },
+          "3": {
+            "per_share": 0.16283783783783953,
+            "fills": 16,
+            "volume": 74,
+            "coverage": 0.8888888888888888,
+            "status_counts": {
+              "late": 2,
+              "ok": 14
+            }
+          },
+          "5": {
+            "per_share": 0.22837837837838057,
+            "fills": 16,
+            "volume": 74,
+            "coverage": 0.8888888888888888,
+            "status_counts": {
+              "ok": 16
+            }
+          }
+        }
+      },
+      "PHILIPS_B": {
+        "pnl_mid_change": -92.59999999999968,
+        "initial_position": -5,
+        "final_position": 17,
+        "initial_mid": 116.9,
+        "final_mid": 115.30000000000001,
+        "inherited_inventory_mtm": 7.999999999999972,
+        "new_fills_marked_at_end": -100.59999999999965,
+        "max_abs_observed_position": 25,
+        "observed_mid_drawdown": 115.59999999999968,
+        "fill_count": 34,
+        "fill_volume": 162,
+        "markouts": {
+          "1": {
+            "per_share": -0.3584905660377361,
+            "fills": 33,
+            "volume": 159,
+            "coverage": 0.9705882352941176,
+            "status_counts": {
+              "ok": 32,
+              "late": 1
+            }
+          },
+          "3": {
+            "per_share": -0.3686619718309871,
+            "fills": 29,
+            "volume": 142,
+            "coverage": 0.8529411764705882,
+            "status_counts": {
+              "ok": 29
+            }
+          },
+          "5": {
+            "per_share": -0.9852272727272738,
+            "fills": 27,
+            "volume": 132,
+            "coverage": 0.7941176470588235,
+            "status_counts": {
+              "ok": 27
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "run": "run_20260908T041636Z_4c9ffec2",
+    "source": "data\\runs\\baseline\\run_20260908T041636Z_4c9ffec2\\trading_20260908T041636Z_4c9ffec2.jsonl",
+    "version": "unversioned",
+    "start_beijing": "2026-09-08 12:16:36",
+    "end_beijing": "2026-09-08 12:17:06",
+    "minutes": 0.49684363333333337,
+    "session_end_present": true,
+    "instruments": {
+      "PHILIPS_A": {
+        "pnl_mid_change": 15.250000000000114,
+        "initial_position": 8,
+        "final_position": 3,
+        "initial_mid": 114.6,
+        "final_mid": 114.85,
+        "inherited_inventory_mtm": 2.0,
+        "new_fills_marked_at_end": 13.250000000000114,
+        "max_abs_observed_position": 18,
+        "observed_mid_drawdown": 3.0499999999998977,
+        "fill_count": 11,
+        "fill_volume": 55,
+        "markouts": {
+          "1": {
+            "per_share": 0.2454545454545457,
+            "fills": 11,
+            "volume": 55,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 11
+            }
+          },
+          "3": {
+            "per_share": 0.21499999999999772,
+            "fills": 10,
+            "volume": 50,
+            "coverage": 0.9090909090909091,
+            "status_counts": {
+              "ok": 10
+            }
+          },
+          "5": {
+            "per_share": 0.2874999999999943,
+            "fills": 8,
+            "volume": 40,
+            "coverage": 0.7272727272727273,
+            "status_counts": {
+              "ok": 8
+            }
+          }
+        }
+      },
+      "PHILIPS_B": {
+        "pnl_mid_change": -9.0,
+        "initial_position": 12,
+        "final_position": 12,
+        "initial_mid": 116.0,
+        "final_mid": 115.25,
+        "inherited_inventory_mtm": -9.0,
+        "new_fills_marked_at_end": 0.0,
+        "max_abs_observed_position": 12,
+        "observed_mid_drawdown": 50.399999999999864,
+        "fill_count": 0,
+        "fill_volume": 0,
+        "markouts": {}
+      }
+    }
+  },
+  {
+    "run": "run_20260908T042551Z_88eb7d36",
+    "source": "data\\runs\\baseline\\run_20260908T042551Z_88eb7d36\\trading_20260908T042551Z_88eb7d36.jsonl",
+    "version": "unversioned",
+    "start_beijing": "2026-09-08 12:25:51",
+    "end_beijing": "2026-09-08 12:27:03",
+    "minutes": 1.1986080333333333,
+    "session_end_present": true,
+    "instruments": {
+      "PHILIPS_A": {
+        "pnl_mid_change": -68.6000000000003,
+        "initial_position": 3,
+        "final_position": 58,
+        "initial_mid": 115.30000000000001,
+        "final_mid": 112.60000000000001,
+        "inherited_inventory_mtm": -8.100000000000009,
+        "new_fills_marked_at_end": -60.5000000000003,
+        "max_abs_observed_position": 58,
+        "observed_mid_drawdown": 86.69999999999982,
+        "fill_count": 33,
+        "fill_volume": 155,
+        "markouts": {
+          "1": {
+            "per_share": 0.1774193548387106,
+            "fills": 33,
+            "volume": 155,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 33
+            }
+          },
+          "3": {
+            "per_share": 0.11666666666666714,
+            "fills": 32,
+            "volume": 150,
+            "coverage": 0.9696969696969697,
+            "status_counts": {
+              "ok": 32
+            }
+          },
+          "5": {
+            "per_share": 0.11166666666666696,
+            "fills": 32,
+            "volume": 150,
+            "coverage": 0.9696969696969697,
+            "status_counts": {
+              "ok": 32
+            }
+          }
+        }
+      },
+      "PHILIPS_B": {
+        "pnl_mid_change": -64.20000000000005,
+        "initial_position": 12,
+        "final_position": 12,
+        "initial_mid": 116.85000000000001,
+        "final_mid": 111.5,
+        "inherited_inventory_mtm": -64.2000000000001,
+        "new_fills_marked_at_end": 5.684341886080802e-14,
+        "max_abs_observed_position": 12,
+        "observed_mid_drawdown": 93.0,
+        "fill_count": 0,
+        "fill_volume": 0,
+        "markouts": {}
+      }
+    }
+  },
+  {
+    "run": "run_20260909T051956Z_2e8dad67",
+    "source": "data\\runs\\baseline\\run_20260909T051956Z_2e8dad67\\trading_20260909T051956Z_2e8dad67.jsonl",
+    "version": "unversioned",
+    "start_beijing": "2026-09-09 13:19:56",
+    "end_beijing": "2026-09-09 14:08:03",
+    "minutes": 48.10862146666667,
+    "session_end_present": true,
+    "instruments": {
+      "PHILIPS_A": {
+        "pnl_mid_change": 170.79999999999927,
+        "initial_position": 58,
+        "final_position": 2,
+        "initial_mid": 209.65,
+        "final_mid": 215.45000000000002,
+        "inherited_inventory_mtm": 336.40000000000066,
+        "new_fills_marked_at_end": -165.6000000000014,
+        "max_abs_observed_position": 58,
+        "observed_mid_drawdown": 65.39999999999964,
+        "fill_count": 170,
+        "fill_volume": 840,
+        "markouts": {
+          "1": {
+            "per_share": 0.09726190476190293,
+            "fills": 170,
+            "volume": 840,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 129,
+              "late": 41
+            }
+          },
+          "3": {
+            "per_share": 0.1077976190476188,
+            "fills": 170,
+            "volume": 840,
+            "coverage": 1.0,
+            "status_counts": {
+              "late": 19,
+              "ok": 151
+            }
+          },
+          "5": {
+            "per_share": 0.13214285714285803,
+            "fills": 170,
+            "volume": 840,
+            "coverage": 1.0,
+            "status_counts": {
+              "late": 33,
+              "ok": 137
+            }
+          },
+          "15": {
+            "per_share": 0.0923952095808386,
+            "fills": 169,
+            "volume": 835,
+            "coverage": 0.9941176470588236,
+            "status_counts": {
+              "ok": 153,
+              "late": 16
+            }
+          },
+          "30": {
+            "per_share": 0.0675559380378657,
+            "fills": 117,
+            "volume": 581,
+            "coverage": 0.6882352941176471,
+            "status_counts": {
+              "ok": 117
+            }
+          }
+        }
+      },
+      "PHILIPS_B": {
+        "pnl_mid_change": 56.40000000000009,
+        "initial_position": 12,
+        "final_position": 12,
+        "initial_mid": 210.60000000000002,
+        "final_mid": 215.3,
+        "inherited_inventory_mtm": 56.399999999999864,
+        "new_fills_marked_at_end": 2.2737367544323206e-13,
+        "max_abs_observed_position": 12,
+        "observed_mid_drawdown": 228.59999999999945,
+        "fill_count": 0,
+        "fill_volume": 0,
+        "markouts": {}
+      }
+    }
+  },
+  {
+    "run": "run_20260910T081408Z_976e5798",
+    "source": "data\\runs\\baseline\\run_20260910T081408Z_976e5798\\trading_20260910T081408Z_976e5798.jsonl",
+    "version": "unversioned",
+    "start_beijing": "2026-09-10 16:14:09",
+    "end_beijing": "2026-09-10 16:19:32",
+    "minutes": 5.3862257499999995,
+    "session_end_present": true,
+    "instruments": {
+      "PHILIPS_A": {
+        "pnl_mid_change": 164.7500000000009,
+        "initial_position": 0,
+        "final_position": -9,
+        "initial_mid": 159.70000000000002,
+        "final_mid": 160.55,
+        "inherited_inventory_mtm": 0.0,
+        "new_fills_marked_at_end": 164.7500000000009,
+        "max_abs_observed_position": 46,
+        "observed_mid_drawdown": 15.349999999999454,
+        "fill_count": 152,
+        "fill_volume": 471,
+        "markouts": {
+          "1": {
+            "per_share": 0.07430997876857484,
+            "fills": 152,
+            "volume": 471,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 152
+            }
+          },
+          "3": {
+            "per_share": 0.09076433121019115,
+            "fills": 152,
+            "volume": 471,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 152
+            }
+          },
+          "5": {
+            "per_share": 0.11698513800424501,
+            "fills": 152,
+            "volume": 471,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 152
+            }
+          },
+          "15": {
+            "per_share": 0.16322580645161133,
+            "fills": 150,
+            "volume": 465,
+            "coverage": 0.9868421052631579,
+            "status_counts": {
+              "ok": 150
+            }
+          },
+          "30": {
+            "per_share": 0.06848404255318907,
+            "fills": 123,
+            "volume": 376,
+            "coverage": 0.8092105263157895,
+            "status_counts": {
+              "ok": 123
+            }
+          }
+        }
+      },
+      "PHILIPS_B": {
+        "pnl_mid_change": -403.3499999999988,
+        "initial_position": 0,
+        "final_position": 9,
+        "initial_mid": 158.55,
+        "final_mid": 164.65,
+        "inherited_inventory_mtm": 0.0,
+        "new_fills_marked_at_end": -403.3499999999988,
+        "max_abs_observed_position": 31,
+        "observed_mid_drawdown": 415.7999999999987,
+        "fill_count": 377,
+        "fill_volume": 1741,
+        "markouts": {
+          "1": {
+            "per_share": -0.22883064516129065,
+            "fills": 375,
+            "volume": 1736,
+            "coverage": 0.9946949602122016,
+            "status_counts": {
+              "ok": 375
+            }
+          },
+          "3": {
+            "per_share": -0.12300987797791971,
+            "fills": 372,
+            "volume": 1721,
+            "coverage": 0.986737400530504,
+            "status_counts": {
+              "ok": 372
+            }
+          },
+          "5": {
+            "per_share": -0.2756410256410254,
+            "fills": 371,
+            "volume": 1716,
+            "coverage": 0.9840848806366048,
+            "status_counts": {
+              "ok": 371
+            }
+          },
+          "15": {
+            "per_share": -0.17599024984765377,
+            "fills": 355,
+            "volume": 1641,
+            "coverage": 0.9416445623342176,
+            "status_counts": {
+              "ok": 355
+            }
+          },
+          "30": {
+            "per_share": -0.18458620689655109,
+            "fills": 313,
+            "volume": 1450,
+            "coverage": 0.830238726790451,
+            "status_counts": {
+              "ok": 313
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "run": "run_20260910T084557Z_76c092d2",
+    "source": "data\\runs\\baseline\\run_20260910T084557Z_76c092d2\\trading_20260910T084557Z_76c092d2.jsonl",
+    "version": "unversioned",
+    "start_beijing": "2026-09-10 16:45:57",
+    "end_beijing": "2026-09-10 16:50:49",
+    "minutes": 4.871349783333333,
+    "session_end_present": true,
+    "instruments": {
+      "PHILIPS_A": {
+        "pnl_mid_change": 118.050000000002,
+        "initial_position": 0,
+        "final_position": 35,
+        "initial_mid": 164.10000000000002,
+        "final_mid": 164.45,
+        "inherited_inventory_mtm": 0.0,
+        "new_fills_marked_at_end": 118.050000000002,
+        "max_abs_observed_position": 35,
+        "observed_mid_drawdown": 19.899999999999636,
+        "fill_count": 144,
+        "fill_volume": 477,
+        "markouts": {
+          "1": {
+            "per_share": 0.13134171907756792,
+            "fills": 144,
+            "volume": 477,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 144
+            }
+          },
+          "3": {
+            "per_share": 0.16281512605041987,
+            "fills": 143,
+            "volume": 476,
+            "coverage": 0.9930555555555556,
+            "status_counts": {
+              "ok": 143
+            }
+          },
+          "5": {
+            "per_share": 0.1938947368421049,
+            "fills": 142,
+            "volume": 475,
+            "coverage": 0.9861111111111112,
+            "status_counts": {
+              "ok": 142
+            }
+          },
+          "15": {
+            "per_share": 0.25781938325991094,
+            "fills": 133,
+            "volume": 454,
+            "coverage": 0.9236111111111112,
+            "status_counts": {
+              "ok": 133
+            }
+          },
+          "30": {
+            "per_share": 0.1929319371727738,
+            "fills": 109,
+            "volume": 382,
+            "coverage": 0.7569444444444444,
+            "status_counts": {
+              "ok": 109
+            }
+          }
+        }
+      },
+      "PHILIPS_B": {
+        "pnl_mid_change": -425.3000000000027,
+        "initial_position": 14,
+        "final_position": 4,
+        "initial_mid": 166.60000000000002,
+        "final_mid": 162.05,
+        "inherited_inventory_mtm": -63.70000000000016,
+        "new_fills_marked_at_end": -361.6000000000025,
+        "max_abs_observed_position": 31,
+        "observed_mid_drawdown": 491.05000000000337,
+        "fill_count": 353,
+        "fill_volume": 1598,
+        "markouts": {
+          "1": {
+            "per_share": -0.3478970495919643,
+            "fills": 352,
+            "volume": 1593,
+            "coverage": 0.9971671388101983,
+            "status_counts": {
+              "ok": 352
+            }
+          },
+          "3": {
+            "per_share": -0.2894803548795937,
+            "fills": 349,
+            "volume": 1578,
+            "coverage": 0.9886685552407932,
+            "status_counts": {
+              "ok": 349
+            }
+          },
+          "5": {
+            "per_share": -0.17142401021711398,
+            "fills": 346,
+            "volume": 1566,
+            "coverage": 0.9801699716713881,
+            "status_counts": {
+              "ok": 346
+            }
+          },
+          "15": {
+            "per_share": -0.19926568758344546,
+            "fills": 332,
+            "volume": 1498,
+            "coverage": 0.9405099150141643,
+            "status_counts": {
+              "ok": 332
+            }
+          },
+          "30": {
+            "per_share": -0.3243102162565248,
+            "fills": 293,
+            "volume": 1341,
+            "coverage": 0.830028328611898,
+            "status_counts": {
+              "ok": 293
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "run": "run_20260910T085700Z_2c772790",
+    "source": "data\\runs\\baseline\\run_20260910T085700Z_2c772790\\trading_20260910T085700Z_2c772790.jsonl",
+    "version": "baseline_cycle_protected_v1",
+    "start_beijing": "2026-09-10 16:57:00",
+    "end_beijing": "2026-09-10 17:11:40",
+    "minutes": 14.660839033333334,
+    "session_end_present": true,
+    "instruments": {
+      "PHILIPS_A": {
+        "pnl_mid_change": 299.94999999999345,
+        "initial_position": 35,
+        "final_position": 43,
+        "initial_mid": 161.85000000000002,
+        "final_mid": 159.8,
+        "inherited_inventory_mtm": -71.7500000000004,
+        "new_fills_marked_at_end": 371.69999999999385,
+        "max_abs_observed_position": 43,
+        "observed_mid_drawdown": 34.75,
+        "fill_count": 491,
+        "fill_volume": 1622,
+        "markouts": {
+          "1": {
+            "per_share": 0.10376078914919883,
+            "fills": 491,
+            "volume": 1622,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 491
+            }
+          },
+          "3": {
+            "per_share": 0.13783199505867824,
+            "fills": 489,
+            "volume": 1619,
+            "coverage": 0.9959266802443992,
+            "status_counts": {
+              "ok": 489
+            }
+          },
+          "5": {
+            "per_share": 0.16512995049504944,
+            "fills": 488,
+            "volume": 1616,
+            "coverage": 0.9938900203665988,
+            "status_counts": {
+              "ok": 488
+            }
+          },
+          "15": {
+            "per_share": 0.18621655258245107,
+            "fills": 483,
+            "volume": 1607,
+            "coverage": 0.9837067209775967,
+            "status_counts": {
+              "ok": 483
+            }
+          },
+          "30": {
+            "per_share": 0.1708912768647285,
+            "fills": 474,
+            "volume": 1582,
+            "coverage": 0.9653767820773931,
+            "status_counts": {
+              "ok": 474
+            }
+          },
+          "60": {
+            "per_share": 0.19193121693121615,
+            "fills": 455,
+            "volume": 1512,
+            "coverage": 0.9266802443991853,
+            "status_counts": {
+              "ok": 454,
+              "late": 1
+            }
+          }
+        }
+      },
+      "PHILIPS_B": {
+        "pnl_mid_change": -411.00000000000034,
+        "initial_position": 4,
+        "final_position": 2,
+        "initial_mid": 161.0,
+        "final_mid": 156.8,
+        "inherited_inventory_mtm": -16.799999999999955,
+        "new_fills_marked_at_end": -394.2000000000004,
+        "max_abs_observed_position": 9,
+        "observed_mid_drawdown": 414.80000000000064,
+        "fill_count": 986,
+        "fill_volume": 1976,
+        "markouts": {
+          "1": {
+            "per_share": -0.24305977710233026,
+            "fills": 985,
+            "volume": 1974,
+            "coverage": 0.9989858012170385,
+            "status_counts": {
+              "ok": 985
+            }
+          },
+          "3": {
+            "per_share": -0.1925126903553309,
+            "fills": 983,
+            "volume": 1970,
+            "coverage": 0.9969574036511156,
+            "status_counts": {
+              "ok": 983
+            }
+          },
+          "5": {
+            "per_share": -0.205228426395939,
+            "fills": 983,
+            "volume": 1970,
+            "coverage": 0.9969574036511156,
+            "status_counts": {
+              "ok": 983
+            }
+          },
+          "15": {
+            "per_share": -0.2831185567010306,
+            "fills": 971,
+            "volume": 1940,
+            "coverage": 0.9847870182555781,
+            "status_counts": {
+              "ok": 971
+            }
+          },
+          "30": {
+            "per_share": -0.27945675105485257,
+            "fills": 950,
+            "volume": 1896,
+            "coverage": 0.9634888438133874,
+            "status_counts": {
+              "ok": 950
+            }
+          },
+          "60": {
+            "per_share": -0.20936813186813316,
+            "fills": 911,
+            "volume": 1820,
+            "coverage": 0.9239350912778904,
+            "status_counts": {
+              "ok": 911
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "run": "run_20260910T091154Z_4aa539d2",
+    "source": "data\\runs\\baseline\\run_20260910T091154Z_4aa539d2\\trading_20260910T091154Z_4aa539d2.jsonl",
+    "version": "baseline_cycle_risk_only_v2",
+    "start_beijing": "2026-09-10 17:11:54",
+    "end_beijing": "2026-09-10 17:18:03",
+    "minutes": 6.1439953,
+    "session_end_present": false,
+    "instruments": {
+      "PHILIPS_A": {
+        "pnl_mid_change": 150.00000000000182,
+        "initial_position": 43,
+        "final_position": 22,
+        "initial_mid": 160.0,
+        "final_mid": 160.20000000000002,
+        "inherited_inventory_mtm": 8.600000000000733,
+        "new_fills_marked_at_end": 141.40000000000109,
+        "max_abs_observed_position": 46,
+        "observed_mid_drawdown": 32.05000000000109,
+        "fill_count": 229,
+        "fill_volume": 695,
+        "markouts": {
+          "1": {
+            "per_share": 0.09920863309352557,
+            "fills": 229,
+            "volume": 695,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 229
+            }
+          },
+          "3": {
+            "per_share": 0.12597122302158148,
+            "fills": 229,
+            "volume": 695,
+            "coverage": 1.0,
+            "status_counts": {
+              "ok": 229
+            }
+          },
+          "5": {
+            "per_share": 0.1558695652173881,
+            "fills": 228,
+            "volume": 690,
+            "coverage": 0.9956331877729258,
+            "status_counts": {
+              "ok": 228
+            }
+          },
+          "15": {
+            "per_share": 0.23636363636363672,
+            "fills": 226,
+            "volume": 682,
+            "coverage": 0.9868995633187773,
+            "status_counts": {
+              "ok": 226
+            }
+          },
+          "30": {
+            "per_share": 0.2637724550898203,
+            "fills": 222,
+            "volume": 668,
+            "coverage": 0.9694323144104804,
+            "status_counts": {
+              "ok": 222
+            }
+          },
+          "60": {
+            "per_share": 0.37529510961213886,
+            "fills": 194,
+            "volume": 593,
+            "coverage": 0.8471615720524017,
+            "status_counts": {
+              "ok": 194
+            }
+          }
+        }
+      },
+      "PHILIPS_B": {
+        "pnl_mid_change": -147.60000000000002,
+        "initial_position": 0,
+        "final_position": 0,
+        "initial_mid": 156.5,
+        "final_mid": 156.60000000000002,
+        "inherited_inventory_mtm": 0.0,
+        "new_fills_marked_at_end": -147.60000000000002,
+        "max_abs_observed_position": 6,
+        "observed_mid_drawdown": 149.79999999999995,
+        "fill_count": 365,
+        "fill_volume": 628,
+        "markouts": {
+          "1": {
+            "per_share": -0.34313099041533696,
+            "fills": 364,
+            "volume": 626,
+            "coverage": 0.9972602739726028,
+            "status_counts": {
+              "ok": 364
+            }
+          },
+          "3": {
+            "per_share": -0.20450160771704284,
+            "fills": 362,
+            "volume": 622,
+            "coverage": 0.9917808219178083,
+            "status_counts": {
+              "ok": 362
+            }
+          },
+          "5": {
+            "per_share": -0.22556634304207268,
+            "fills": 360,
+            "volume": 618,
+            "coverage": 0.9863013698630136,
+            "status_counts": {
+              "ok": 360
+            }
+          },
+          "15": {
+            "per_share": -0.23518211920529822,
+            "fills": 351,
+            "volume": 604,
+            "coverage": 0.9616438356164384,
+            "status_counts": {
+              "ok": 351
+            }
+          },
+          "30": {
+            "per_share": -0.17928082191780814,
+            "fills": 336,
+            "volume": 584,
+            "coverage": 0.9205479452054794,
+            "status_counts": {
+              "ok": 336
+            }
+          },
+          "60": {
+            "per_share": -0.2195283018867926,
+            "fills": 301,
+            "volume": 530,
+            "coverage": 0.8246575342465754,
+            "status_counts": {
+              "ok": 301
+            }
+          }
+        }
+      }
+    }
+  }
+]

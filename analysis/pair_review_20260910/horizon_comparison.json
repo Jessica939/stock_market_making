@@ -1,0 +1,188 @@
+{
+  "method": "Hypothetical signal bid/ask entry; fresh synchronized displayed-depth exit within 1 second of target. No queue/slippage/price-band guarantee; overlapping signals are not additive. Complete records from incomplete gzip retained and flagged.",
+  "incomplete_files": [
+    "data\\market\\philips_20260909T060802_306000Z_e21328a0\\orderbooks_00001.jsonl.gz",
+    "data\\market\\philips_20260910T091154_364816Z_57b26f1c\\orderbooks_00001.jsonl.gz"
+  ],
+  "entries": [
+    {
+      "time": "2026-09-10T06:46:22.445183+00:00",
+      "size": 10,
+      "outcomes": {
+        "45": {
+          "pnl": 40.0,
+          "seconds": 45.137059926986694,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        },
+        "60": {
+          "pnl": 58.99999999999977,
+          "seconds": 60.23444390296936,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        },
+        "90": {
+          "pnl": 85.99999999999955,
+          "seconds": 90.47953486442566,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        }
+      }
+    },
+    {
+      "time": "2026-09-10T06:46:33.324690+00:00",
+      "size": 3,
+      "outcomes": {
+        "45": {
+          "pnl": 13.19999999999996,
+          "seconds": 45.33427381515503,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        },
+        "60": {
+          "pnl": 18.900000000000006,
+          "seconds": 60.45828199386597,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        },
+        "90": {
+          "pnl": 15.900000000000006,
+          "seconds": 90.19190192222595,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        }
+      }
+    },
+    {
+      "time": "2026-09-10T06:46:43.395949+00:00",
+      "size": 3,
+      "outcomes": {
+        "45": {
+          "pnl": 9.0,
+          "seconds": 45.3563392162323,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        },
+        "60": {
+          "pnl": 15.600000000000023,
+          "seconds": 60.469481229782104,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        },
+        "90": null
+      }
+    },
+    {
+      "time": "2026-09-10T06:46:53.225559+00:00",
+      "size": 1,
+      "outcomes": {
+        "45": {
+          "pnl": 2.5999999999999943,
+          "seconds": 45.081697940826416,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        },
+        "60": {
+          "pnl": 5.199999999999989,
+          "seconds": 60.20234394073486,
+          "source": "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+        },
+        "90": null
+      }
+    },
+    {
+      "time": "2026-09-10T06:47:42.327187+00:00",
+      "size": 16,
+      "outcomes": {
+        "45": null,
+        "60": null,
+        "90": null
+      }
+    },
+    {
+      "time": "2026-09-10T06:47:52.412109+00:00",
+      "size": 1,
+      "outcomes": {
+        "45": null,
+        "60": null,
+        "90": null
+      }
+    },
+    {
+      "time": "2026-09-10T06:48:03.249088+00:00",
+      "size": 16,
+      "outcomes": {
+        "45": null,
+        "60": null,
+        "90": null
+      }
+    },
+    {
+      "time": "2026-09-10T08:25:20.036126+00:00",
+      "size": 14,
+      "outcomes": {
+        "45": {
+          "pnl": 31.10000000000008,
+          "seconds": 45.51866316795349,
+          "source": "data\\market\\philips_20260910T081952_472135Z_d1c748f3\\orderbooks_00001.jsonl.gz"
+        },
+        "60": {
+          "pnl": 67.19999999999999,
+          "seconds": 60.06973099708557,
+          "source": "data\\market\\philips_20260910T081952_472135Z_d1c748f3\\orderbooks_00001.jsonl.gz"
+        },
+        "90": {
+          "pnl": 54.60000000000008,
+          "seconds": 90.32422804832458,
+          "source": "data\\market\\philips_20260910T081952_472135Z_d1c748f3\\orderbooks_00001.jsonl.gz"
+        }
+      }
+    },
+    {
+      "time": "2026-09-10T08:37:34.571989+00:00",
+      "size": 11,
+      "outcomes": {
+        "45": {
+          "pnl": 21.999999999999943,
+          "seconds": 45.10091805458069,
+          "source": "data\\market\\philips_20260910T081952_472135Z_d1c748f3\\orderbooks_00001.jsonl.gz"
+        },
+        "60": {
+          "pnl": 31.90000000000049,
+          "seconds": 60.160573959350586,
+          "source": "data\\market\\philips_20260910T081952_472135Z_d1c748f3\\orderbooks_00001.jsonl.gz"
+        },
+        "90": {
+          "pnl": 47.300000000000125,
+          "seconds": 90.19734382629395,
+          "source": "data\\market\\philips_20260910T081952_472135Z_d1c748f3\\orderbooks_00001.jsonl.gz"
+        }
+      }
+    },
+    {
+      "time": "2026-09-10T08:44:55.269202+00:00",
+      "size": 12,
+      "outcomes": {
+        "45": null,
+        "60": null,
+        "90": {
+          "pnl": 74.4000000000002,
+          "seconds": 90.53287601470947,
+          "source": "data\\market\\philips_20260910T084557_195020Z_1f2e438c\\orderbooks_00001.jsonl.gz"
+        }
+      }
+    },
+    {
+      "time": "2026-09-10T08:45:12.185193+00:00",
+      "size": 14,
+      "outcomes": {
+        "45": {
+          "pnl": 37.79999999999961,
+          "seconds": 45.058440923690796,
+          "source": "data\\market\\philips_20260910T084557_195020Z_1f2e438c\\orderbooks_00001.jsonl.gz"
+        },
+        "60": {
+          "pnl": 26.599999999999795,
+          "seconds": 60.56438088417053,
+          "source": "data\\market\\philips_20260910T084557_195020Z_1f2e438c\\orderbooks_00001.jsonl.gz"
+        },
+        "90": {
+          "pnl": 53.20000000000016,
+          "seconds": 90.43892002105713,
+          "source": "data\\market\\philips_20260910T084557_195020Z_1f2e438c\\orderbooks_00001.jsonl.gz"
+        }
+      }
+    }
+  ]
+}

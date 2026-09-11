@@ -1,0 +1,397 @@
+{
+  "rule_source": "User: original orders >200 are official robots; others probably participants.",
+  "caveat": "Price-level totals and matched quantities are proxies, not original order identities.",
+  "participant_order_limit": 200,
+  "participant_position_limit_per_instrument": 100,
+  "known_own_matched_trades": 3313,
+  "trade_groups": [
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "group": "gt200",
+      "n": 1510,
+      "count_fraction": 0.49105691056910566,
+      "volume": 1168466,
+      "volume_fraction": 0.9442218165627063,
+      "markout_n": 1509,
+      "markout5_equal": -0.2128561961563957,
+      "markout5_volume": 0.07411324473486264
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "group": "le200",
+      "n": 1565,
+      "count_fraction": 0.5089430894308943,
+      "volume": 69025,
+      "volume_fraction": 0.05577818343729368,
+      "markout_n": 1564,
+      "markout5_equal": -0.23024296675191988,
+      "markout5_volume": -0.34027969487831494
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "group": "le200_excluding_known_own",
+      "n": 1395,
+      "count_fraction": 0.45365853658536587,
+      "volume": 68185,
+      "volume_fraction": 0.055099390621830786,
+      "markout_n": 1394,
+      "markout5_equal": -0.2530129124820678,
+      "markout5_volume": -0.34395675516658125
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "group": "known_own",
+      "n": 170,
+      "count_fraction": 0.055284552845528454,
+      "volume": 840,
+      "volume_fraction": 0.0006787928154629003,
+      "markout_n": 170,
+      "markout5_equal": -0.04352941176470659,
+      "markout5_volume": -0.0426785714285721
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "group": "gt200",
+      "n": 12501,
+      "count_fraction": 0.8084459677940892,
+      "volume": 14478099,
+      "volume_fraction": 0.9920795209545387,
+      "markout_n": 12450,
+      "markout5_equal": -0.07800803212851404,
+      "markout5_volume": -0.012324797614161456
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "group": "le200",
+      "n": 2962,
+      "count_fraction": 0.19155403220591088,
+      "volume": 115589,
+      "volume_fraction": 0.007920479045461297,
+      "markout_n": 2958,
+      "markout5_equal": 0.08776200135226438,
+      "markout5_volume": 0.3240817337353676
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "group": "le200_excluding_known_own",
+      "n": 2962,
+      "count_fraction": 0.19155403220591088,
+      "volume": 115589,
+      "volume_fraction": 0.007920479045461297,
+      "markout_n": 2958,
+      "markout5_equal": 0.08776200135226438,
+      "markout5_volume": 0.3240817337353676
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "group": "known_own",
+      "n": 0,
+      "count_fraction": 0.0,
+      "volume": 0,
+      "volume_fraction": 0.0,
+      "markout_n": 0,
+      "markout5_equal": null,
+      "markout5_volume": null
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "group": "gt200",
+      "n": 419,
+      "count_fraction": 0.03636205849171223,
+      "volume": 392253,
+      "volume_fraction": 0.6258494175536455,
+      "markout_n": 411,
+      "markout5_equal": -0.14002433090024327,
+      "markout5_volume": 0.15089927638477246
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "group": "le200",
+      "n": 11104,
+      "count_fraction": 0.9636379415082877,
+      "volume": 234500,
+      "volume_fraction": 0.37415058244635446,
+      "markout_n": 11019,
+      "markout5_equal": -0.21162083673654566,
+      "markout5_volume": -0.19688440412854635
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "group": "le200_excluding_known_own",
+      "n": 10064,
+      "count_fraction": 0.8733836674477132,
+      "volume": 231037,
+      "volume_fraction": 0.3686252798151744,
+      "markout_n": 9988,
+      "markout5_equal": -0.21481277533039628,
+      "markout5_volume": -0.1972776837011067
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "group": "known_own",
+      "n": 1040,
+      "count_fraction": 0.0902542740605745,
+      "volume": 3463,
+      "volume_fraction": 0.005525302631180066,
+      "markout_n": 1031,
+      "markout5_equal": -0.1806983511154205,
+      "markout5_volume": -0.17051921384570148
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "group": "gt200",
+      "n": 5542,
+      "count_fraction": 0.2642823080591321,
+      "volume": 6801624,
+      "volume_fraction": 0.9471866222337962,
+      "markout_n": 5428,
+      "markout5_equal": -0.04127671333824639,
+      "markout5_volume": -0.002955440040729473
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "group": "le200",
+      "n": 15428,
+      "count_fraction": 0.7357176919408679,
+      "volume": 379246,
+      "volume_fraction": 0.05281337776620382,
+      "markout_n": 15183,
+      "markout5_equal": 0.18480208127511022,
+      "markout5_volume": 0.31626325380824033
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "group": "le200_excluding_known_own",
+      "n": 13325,
+      "count_fraction": 0.6354315689079637,
+      "volume": 373096,
+      "volume_fraction": 0.05195693558022914,
+      "markout_n": 13116,
+      "markout5_equal": 0.18793839585239386,
+      "markout5_volume": 0.3174817856742238
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "group": "known_own",
+      "n": 2103,
+      "count_fraction": 0.10028612303290414,
+      "volume": 6150,
+      "volume_fraction": 0.00085644218597468,
+      "markout_n": 2067,
+      "markout5_equal": 0.16490082244799265,
+      "markout5_volume": 0.24188376753507038
+    }
+  ],
+  "depth_groups": [
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "side": "bid",
+      "small_best_fraction": 0.1580673647029141,
+      "improvement_n": 3759,
+      "improvement_median": 0.29999999999998295,
+      "improvement_one_tick_fraction": 0.26256983240223464
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "side": "ask",
+      "small_best_fraction": 0.18212017997561078,
+      "improvement_n": 4331,
+      "improvement_median": 0.29999999999998295,
+      "improvement_one_tick_fraction": 0.2579081043638882
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "side": "bid",
+      "small_best_fraction": 0.0309490769942391,
+      "improvement_n": 736,
+      "improvement_median": 0.5,
+      "improvement_one_tick_fraction": 0.13179347826086957
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "side": "ask",
+      "small_best_fraction": 0.031075228123291703,
+      "improvement_n": 739,
+      "improvement_median": 0.5,
+      "improvement_one_tick_fraction": 0.18944519621109607
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "side": "bid",
+      "small_best_fraction": 0.4587905935050392,
+      "improvement_n": 4093,
+      "improvement_median": 0.29999999999998295,
+      "improvement_one_tick_fraction": 0.25873442462741264
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "side": "ask",
+      "small_best_fraction": 0.470996640537514,
+      "improvement_n": 4202,
+      "improvement_median": 0.30000000000001137,
+      "improvement_one_tick_fraction": 0.23821989528795812
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "side": "bid",
+      "small_best_fraction": 0.15218365061590144,
+      "improvement_n": 1358,
+      "improvement_median": 0.20000000000001705,
+      "improvement_one_tick_fraction": 0.3402061855670103
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "side": "ask",
+      "small_best_fraction": 0.17245240761478164,
+      "improvement_n": 1540,
+      "improvement_median": 0.20000000000001705,
+      "improvement_one_tick_fraction": 0.32597402597402597
+    }
+  ],
+  "signals": [
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "group": "small",
+      "n": 5694,
+      "correlation": -0.10592900720429546
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "group": "large",
+      "n": 11746,
+      "correlation": 0.21714265542963376
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "group": "small",
+      "n": 1325,
+      "correlation": 0.08525047512433218
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "group": "large",
+      "n": 11509,
+      "correlation": 0.24662684619856015
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "group": "small",
+      "n": 3648,
+      "correlation": -0.03579763905823999
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "group": "large",
+      "n": 4884,
+      "correlation": 0.251683779468323
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "group": "small",
+      "n": 2239,
+      "correlation": 0.12224768975564705
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "group": "large",
+      "n": 4681,
+      "correlation": 0.28155086785876104
+    }
+  ],
+  "signals_common_sample": [
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "n": 5690,
+      "small_correlation": -0.10591765489995725,
+      "large_correlation": 0.2388896411052786
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "n": 1311,
+      "small_correlation": 0.0884563422550437,
+      "large_correlation": 0.21396277281501738
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "n": 3640,
+      "small_correlation": -0.034938817942018516,
+      "large_correlation": 0.270461827965307
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "n": 2215,
+      "small_correlation": 0.12294142241576099,
+      "large_correlation": 0.2206170879477667
+    }
+  ],
+  "book_topology": [
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_A",
+      "n": 23781,
+      "both_small_fraction": 0.08830579033682351,
+      "either_small_fraction": 0.25188175434170135,
+      "small_best_size_median": 5.0
+    },
+    {
+      "day": "2026-09-09",
+      "instrument": "PHILIPS_B",
+      "n": 23781,
+      "both_small_fraction": 0.003826584247929019,
+      "either_small_fraction": 0.05819772086960178,
+      "small_best_size_median": 10.0
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_A",
+      "n": 8930,
+      "both_small_fraction": 0.30044792833146694,
+      "either_small_fraction": 0.6293393057110862,
+      "small_best_size_median": 25.0
+    },
+    {
+      "day": "2026-09-10",
+      "instrument": "PHILIPS_B",
+      "n": 8930,
+      "both_small_fraction": 0.03124300111982083,
+      "either_small_fraction": 0.2933930571108623,
+      "small_best_size_median": 14.0
+    }
+  ]
+}

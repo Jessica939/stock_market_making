@@ -1,0 +1,125 @@
+{
+  "method": "Signal bid/ask hypothetical entry; fresh synchronized raw displayed-depth exit, no fill guarantee, no boundary filtering; partial gzip complete JSON records retained and flagged. Timestamp coverage only, not recording ownership.",
+  "incomplete_files": [
+    "data\\market\\philips_20260909T060802_306000Z_e21328a0\\orderbooks_00001.jsonl.gz",
+    "data\\market\\philips_20260910T091154_364816Z_57b26f1c\\orderbooks_00001.jsonl.gz"
+  ],
+  "entries": [
+    {
+      "time": "2026-09-10T06:46:22.445183+00:00",
+      "size": 10,
+      "predicted_change": 4.990273715321141,
+      "pnl_45s": [
+        45.137059926986694,
+        40.0,
+        "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+      ],
+      "minimum_sampled_pnl": -24.000000000000455,
+      "samples": 91
+    },
+    {
+      "time": "2026-09-10T06:46:33.324690+00:00",
+      "size": 3,
+      "predicted_change": 5.81873545286387,
+      "pnl_45s": [
+        45.33427381515503,
+        13.19999999999996,
+        "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+      ],
+      "minimum_sampled_pnl": -5.999999999999972,
+      "samples": 91
+    },
+    {
+      "time": "2026-09-10T06:46:43.395949+00:00",
+      "size": 3,
+      "predicted_change": 5.851126030587316,
+      "pnl_45s": [
+        45.3563392162323,
+        9.0,
+        "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+      ],
+      "minimum_sampled_pnl": -4.5,
+      "samples": 91
+    },
+    {
+      "time": "2026-09-10T06:46:53.225559+00:00",
+      "size": 1,
+      "predicted_change": 5.130636856175458,
+      "pnl_45s": [
+        45.081697940826416,
+        2.5999999999999943,
+        "data\\market\\philips_20260910T063523_524309Z_2955af0d\\orderbooks_00001.jsonl.gz"
+      ],
+      "minimum_sampled_pnl": -3.0,
+      "samples": 90
+    },
+    {
+      "time": "2026-09-10T06:47:42.327187+00:00",
+      "size": 16,
+      "predicted_change": -3.337327430398763,
+      "pnl_45s": null,
+      "minimum_sampled_pnl": -93.19999999999982,
+      "samples": 46
+    },
+    {
+      "time": "2026-09-10T06:47:52.412109+00:00",
+      "size": 1,
+      "predicted_change": -4.799443421894058,
+      "pnl_45s": null,
+      "minimum_sampled_pnl": -2.9000000000000057,
+      "samples": 26
+    },
+    {
+      "time": "2026-09-10T06:48:03.249088+00:00",
+      "size": 16,
+      "predicted_change": -5.682575733503573,
+      "pnl_45s": null,
+      "minimum_sampled_pnl": -50.69999999999982,
+      "samples": 4
+    },
+    {
+      "time": "2026-09-10T08:25:20.036126+00:00",
+      "size": 14,
+      "predicted_change": 3.6062098884607003,
+      "pnl_45s": [
+        45.51866316795349,
+        31.10000000000008,
+        "data\\market\\philips_20260910T081952_472135Z_d1c748f3\\orderbooks_00001.jsonl.gz"
+      ],
+      "minimum_sampled_pnl": -26.59999999999974,
+      "samples": 79
+    },
+    {
+      "time": "2026-09-10T08:37:34.571989+00:00",
+      "size": 11,
+      "predicted_change": 4.660429703889419,
+      "pnl_45s": [
+        45.10091805458069,
+        21.999999999999943,
+        "data\\market\\philips_20260910T081952_472135Z_d1c748f3\\orderbooks_00001.jsonl.gz"
+      ],
+      "minimum_sampled_pnl": -25.299999999999784,
+      "samples": 77
+    },
+    {
+      "time": "2026-09-10T08:44:55.269202+00:00",
+      "size": 12,
+      "predicted_change": -4.27188696356682,
+      "pnl_45s": null,
+      "minimum_sampled_pnl": -15.599999999999795,
+      "samples": 36
+    },
+    {
+      "time": "2026-09-10T08:45:12.185193+00:00",
+      "size": 14,
+      "predicted_change": -4.854806857315189,
+      "pnl_45s": [
+        45.058440923690796,
+        37.79999999999961,
+        "data\\market\\philips_20260910T084557_195020Z_1f2e438c\\orderbooks_00001.jsonl.gz"
+      ],
+      "minimum_sampled_pnl": -31.89999999999975,
+      "samples": 9
+    }
+  ]
+}
