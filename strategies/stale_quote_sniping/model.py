@@ -14,12 +14,28 @@ class BasisSettings:
     sample_seconds: float = 1.0
     refit_seconds: float = 5.0
     max_gap_seconds: float = 10.0
+    prior_enabled: bool = False
+    prior_peak_epoch_seconds: float = 165.95
+    prior_center: float = 0.0
+    prior_amplitude: float = 3.1
+    prior_rmse: float = 0.9
+    prior_fit_r2: float = 0.88
 
     def __post_init__(self):
+        if type(self.prior_enabled) is not bool:
+            raise ValueError("prior_enabled must be boolean")
         for name in self.__dataclass_fields__:
+            if name in ("prior_enabled", "prior_center"):
+                continue
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
                 raise ValueError(name + " must be finite and positive")
+        if (isinstance(self.prior_center, bool)
+                or not isinstance(self.prior_center, (int, float))
+                or not math.isfinite(self.prior_center)):
+            raise ValueError("prior_center must be finite")
+        if self.prior_fit_r2 > 1:
+            raise ValueError("prior_fit_r2 must not exceed one")
         if not self.warmup_seconds <= self.history_seconds:
             raise ValueError("warmup_seconds must not exceed history_seconds")
         if self.sample_seconds > self.period_seconds / 20:
@@ -44,6 +60,19 @@ class CausalBasisModel:
         self.weights = None
         self.last_sample = self.last_fit = self.last_observation = -math.inf
         self.quality = {}
+
+    def _activate_prior(self):
+        cfg = self.settings
+        phase = 2 * math.pi * (cfg.prior_peak_epoch_seconds % cfg.period_seconds) / cfg.period_seconds
+        self.weights = (cfg.prior_center,
+                        cfg.prior_amplitude * math.sin(phase),
+                        cfg.prior_amplitude * math.cos(phase))
+        self.quality = dict(
+            fit_rmse=cfg.prior_rmse,
+            fit_r2=cfg.prior_fit_r2,
+            fit_samples=0,
+            quality_scope="historical_epoch_phase_prior",
+        )
 
     def _x(self, t):
         angle = 2 * math.pi * ((t - self.origin) % self.settings.period_seconds) / self.settings.period_seconds
@@ -107,7 +136,14 @@ class CausalBasisModel:
             self.reset()
         self.last_observation = now
         if self.origin is None:
-            self.origin = now
+            if cfg.prior_enabled:
+                # Map the monotonic process clock onto the exchange epoch. A
+                # restart therefore keeps the known global cycle phase.
+                phase_stamp = sum(book_stamps) / len(book_stamps)
+                self.origin = now - (phase_stamp % cfg.period_seconds)
+                self._activate_prior()
+            else:
+                self.origin = now
 
         # Produce the decision from parameters fitted strictly before this row.
         predicted = self.predict(now)
@@ -128,4 +164,3 @@ class CausalBasisModel:
                 self._fit()
                 self.last_fit = now
         return signal
-

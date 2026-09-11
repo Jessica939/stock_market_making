@@ -31,5 +31,11 @@
   "warmup_seconds": 180.0,
   "sample_seconds": 1.0,
   "refit_seconds": 5.0,
-  "max_gap_seconds": 10.0
+  "max_gap_seconds": 10.0,
+  "prior_enabled": true,
+  "prior_peak_epoch_seconds": 165.95,
+  "prior_center": 0.0,
+  "prior_amplitude": 3.1,
+  "prior_rmse": 0.9,
+  "prior_fit_r2": 0.88
 }

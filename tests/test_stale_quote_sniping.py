@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT.parent))
 from stock_market_making.strategies.stale_quote_sniping.engine import (
     Engine, SYMBOLS, scaled_entry_size, sized_execution, validate,
 )
-from stock_market_making.strategies.stale_quote_sniping.model import CausalBasisModel
+from stock_market_making.strategies.stale_quote_sniping.model import BasisSettings, CausalBasisModel
 from stock_market_making.strategies.common.execution import ExecutionFault
 from stock_market_making.strategies.common.simulation import ReplayExchange, SimClock
 
@@ -198,6 +198,34 @@ class StaleQuoteTests(unittest.TestCase):
 
 
 class CausalityTests(unittest.TestCase):
+    def test_epoch_phase_prior_is_active_on_first_snapshot(self):
+        model = CausalBasisModel(BasisSettings(
+            prior_enabled=True, prior_peak_epoch_seconds=165.95,
+            prior_center=0.0, prior_amplitude=3.1,
+            prior_rmse=0.9, prior_fit_r2=0.88,
+        ))
+        epoch = 1800000165.95
+        signal = model.observe(now=0.0, a_mid=103.1, b_mid=100.0,
+                               book_stamps=(epoch, epoch))
+        self.assertTrue(signal["active"])
+        self.assertEqual(signal["samples"], 0)
+        self.assertEqual(signal["quality_scope"], "historical_epoch_phase_prior")
+        self.assertAlmostEqual(signal["predicted_basis"], 3.1)
+        self.assertAlmostEqual(signal["fair_B"], 100.0)
+
+    def test_prior_reactivates_after_data_gap_without_warmup(self):
+        settings = BasisSettings(prior_enabled=True)
+        model = CausalBasisModel(settings)
+        first = model.observe(now=0.0, a_mid=103.1, b_mid=100.0,
+                              book_stamps=(1800000165.95, 1800000165.95))
+        later_epoch = 1800000165.95 + settings.max_gap_seconds + 1
+        later = model.observe(now=settings.max_gap_seconds + 1,
+                              a_mid=102.8, b_mid=100.0,
+                              book_stamps=(later_epoch, later_epoch))
+        self.assertTrue(first["active"])
+        self.assertTrue(later["active"])
+        self.assertEqual(later["quality_scope"], "historical_epoch_phase_prior")
+
     def test_current_observation_is_not_used_by_its_own_signal(self):
         model = CausalBasisModel()
         for second in range(181):
