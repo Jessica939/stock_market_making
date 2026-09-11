@@ -102,6 +102,7 @@ class CombinedEngine:
 
         orders_module = importlib.import_module(
             'stock_market_making.strategies.baseline-refine.order_execution')
+        self.order_limit_error = orders_module.OrderLimitError
         manager = orders_module.QuoteManager
         self.quote_managers = {
             A: manager(self.mm_view, position_limit=config['position_limit'],
@@ -185,9 +186,17 @@ class CombinedEngine:
                 result = self.quote_managers[symbol].reconcile(symbol, quote)
                 self.journal.emit('baseline_quote_reconciled', instrument=symbol, result=result,
                                   baseline_position=position)
-            except RiskBlocked as exc:
-                self.journal.emit('baseline_admission_blocked', instrument=symbol, reason=str(exc))
-                self.quote_managers[symbol].reconcile(symbol, None)
+            except (RiskBlocked, self.order_limit_error) as exc:
+                # A passive order can fill between QuoteManager's order and
+                # position snapshots.  That makes its remaining quantity look
+                # too large for the newly reduced capacity, but the account is
+                # still fully attributable.  Remove this symbol's MM orders
+                # and calculate a fresh quote on the next loop instead of
+                # ending the whole session.
+                self.journal.emit(
+                    'baseline_quote_recovered', instrument=symbol,
+                    reason=str(exc), error_type=type(exc).__name__)
+                self.account.cancel_owner_symbol('mm', symbol)
 
     def step(self):
         if self.account.halted:
@@ -234,3 +243,5 @@ class CombinedEngine:
         )
         self.journal.emit('session_end', **summary)
         return summary
+
+

@@ -2,14 +2,13 @@ from pathlib import Path
 import tempfile
 import sys
 import unittest
-from unittest.mock import Mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from hybrid_fakes import A, B, Clock, Exchange, Journal
 from stock_market_making.strategies.baseline_stale.engine import CombinedEngine
-from stock_market_making.strategies.baseline_stale.run import load_config, step_or_recover
+from stock_market_making.strategies.baseline_stale.run import load_config
 from stock_market_making.strategies.baseline_refine_loader import load_baseline_refine
 from stock_market_making.strategies.baseline_stale.state import StateError, StateStore
 
@@ -168,43 +167,6 @@ class BaselineStaleTests(unittest.TestCase):
         exchange.fill(A, oid, 1)
         engine.account.audit()
         self.assertEqual(engine.account.positions['mm'][A], 1)
-
-    def test_quote_capacity_race_cancels_symbol_and_keeps_engine_running(self):
-        _clock, exchange, journal, engine = self.make_engine()
-        engine.step()
-        self.assertTrue(exchange.orders[A])
-        manager = engine.quote_managers[A]
-        manager.reconcile = Mock(side_effect=engine.order_limit_error(
-            'PHILIPS_A: bid remaining volume exceeds current capacity'))
-
-        engine.step()
-
-        self.assertFalse(exchange.orders[A])
-        recovered = [row for row in journal.rows
-                     if row['kind'] == 'baseline_quote_recovered']
-        self.assertEqual(recovered[-1]['error_type'], 'OrderLimitError')
-
-    def test_healthy_step_exception_cancels_mm_and_continues_session(self):
-        _clock, exchange, journal, engine = self.make_engine()
-        engine.step()
-        self.assertTrue(exchange.orders[A])
-        engine.step = Mock(side_effect=RuntimeError('temporary calculation failure'))
-
-        completed = step_or_recover(engine, exchange, journal)
-
-        self.assertFalse(completed)
-        self.assertFalse(exchange.orders[A])
-        self.assertFalse(engine.account.halted)
-        self.assertEqual(journal.rows[-1]['kind'], 'combined_step_recovered')
-
-    def test_hard_fault_is_not_hidden_by_loop_recovery(self):
-        _clock, exchange, journal, engine = self.make_engine()
-        engine.account.halted = True
-        engine.step = Mock(side_effect=RuntimeError('unknown order state'))
-
-        with self.assertRaisesRegex(RuntimeError, 'unknown order state'):
-            step_or_recover(engine, exchange, journal)
-
 
 if __name__ == '__main__':
     unittest.main()

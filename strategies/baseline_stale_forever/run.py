@@ -15,11 +15,39 @@ sys.path.insert(0, str(ROOT.parent))
 from stock_market_making.recording.storage import MARKET_DIR, RUNS_DIR
 from stock_market_making.strategies.common.runner import Journal
 from stock_market_making.strategies.stale_quote_sniping.engine import validate as validate_stale
-from stock_market_making.strategies.baseline_stale.engine import CombinedEngine
-from stock_market_making.strategies.baseline_stale.state import StateStore
+from stock_market_making.strategies.baseline_stale_forever.engine import CombinedEngine
+from stock_market_making.strategies.baseline_stale_forever.state import StateStore
 from stock_market_making.strategies.baseline_refine_loader import load_baseline_refine
 
-VERSION = 'baseline_stale_v1'
+VERSION = 'baseline_stale_forever_v1'
+
+
+def step_or_recover(engine, raw, journal):
+    """Run one strategy iteration, recovering only while state is confirmed.
+
+    Unknown insert/cancel outcomes and attribution faults set one of the hard
+    fault flags before raising.  Those exceptions must still reach shutdown.
+    Other exceptions are isolated to one loop after all passive MM orders are
+    cancelled and the shared inventory is successfully audited.
+    """
+    try:
+        engine.step()
+        return True
+    except Exception as exc:
+        if (engine.account.halted or engine.stale.executor.hard_fault
+                or not raw.is_connected()):
+            raise
+        engine.account.cancel_owner('mm')
+        actual = engine.account.audit()
+        detail = traceback.format_exc()
+        journal.emit('combined_step_recovered', error=str(exc),
+                     error_type=type(exc).__name__, traceback=detail,
+                     actual_positions=actual,
+                     baseline_positions=engine.account.positions['mm'].copy(),
+                     stale_positions=engine.account.positions['pair'].copy())
+        print(f'Recovered {type(exc).__name__} in strategy loop; continuing: {exc}',
+              file=sys.stderr, flush=True)
+        return False
 
 
 def load_config(path=None):
@@ -62,13 +90,13 @@ def main(argv=None):
     parser.add_argument('--state-file', type=Path)
     parser.add_argument('--adopt-current', action='store_true',
                         help='Explicitly assign current A/B inventory to baseline and reset stale ownership')
-    parser.add_argument('--log-dir', type=Path, default=RUNS_DIR / 'baseline_stale')
+    parser.add_argument('--log-dir', type=Path, default=RUNS_DIR / 'baseline_stale_forever')
     parser.add_argument('--price-data-dir', type=Path, default=MARKET_DIR)
     args = parser.parse_args(argv)
     try:
         if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', args.account):
             raise ValueError('account must contain only letters, numbers, underscores or hyphens')
-        args.state_file = args.state_file or ROOT / 'state' / args.account / 'baseline_stale.json'
+        args.state_file = args.state_file or ROOT / 'state' / args.account / 'baseline_stale_forever.json'
         if args.adopt_current and not args.live:
             raise ValueError('--adopt-current requires --live')
         config, stale = load_config(args.config)
@@ -116,14 +144,12 @@ def main(argv=None):
         while raw.is_connected() and time.monotonic() < engine.account.deadline:
             try:
                 state.invalidate(config)
-                engine.step()
+                step_or_recover(engine, raw, journal)
                 # Persist attribution for manual recovery. Resting orders or a
                 # stale position keep it unrecoverable until clean shutdown.
                 if (state.data.get('positions') != engine.account.positions
                         or state.data.get('cash') != engine.account.cash):
                     state.checkpoint(engine)
-                if engine.stopping and not any(engine.account.positions['pair'].values()):
-                    break
             finally:
                 raw.sample_market_data()
                 time.sleep(config['loop_seconds'])
@@ -156,3 +182,5 @@ def main(argv=None):
 
 if __name__ == '__main__':
     raise SystemExit(main())
+
+
