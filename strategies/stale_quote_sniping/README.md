@@ -9,7 +9,7 @@
 - 默认在 2 股可执行 ask 低于 FV 至少 3 ticks 时准备买 B；可执行 bid 高于 FV 至少 3 ticks 时准备卖 B。小机会仍下 2 股，不过滤原策略已有的正 edge；超过门槛后每多 2 ticks 增加 10 股，最大 50 股：3–5 ticks 为 2 股，5–7 为 12 股，7–9 为 22 股，9–11 为 32 股，11–13 为 42 股，13 ticks 以上为 50 股。放大后的整笔 VWAP 必须仍满足最低门槛，否则自动降档。
 - 等待至少 50ms 后刷新 A/B 盘口，使用决策时冻结的模型重新计算 FV 和 edge。edge 消失就放弃，不发送订单。
 - 入场和退出均使用 IOC。同一时间最多一笔 B 仓位，基础 2 股、最大 50 股。策略不交易 A，已有 A 仓位不属于 sniper。
-- B 的可执行价格达到入场 FV 后准备退出；最长持仓 5 秒。普通退出不再额外固定等待，但仍必须拿到退出决策之后的新盘口才允许发送 IOC。
+- B 的可执行价格达到入场 FV 后准备退出；最长持仓 5 秒。普通退出不再额外固定等待，但仍必须拿到退出决策之后的新盘口，并用实际仓位的可执行 VWAP 重验入场 FV，目标消失就取消这次止盈而不发送 IOC。持仓超时、风险和停机退出不受这项止盈保护约束，仍会执行平仓。
 - live 模式直接使用显示深度，不做无意义的 queue reserve，因为本策略是主动 IOC taker。历史回放仍预留 200 股，降低旧策略自身订单污染。盘口最多 1 秒陈旧，A/B 时间差最多 750ms，最多扫 10 ticks。
 - 累计损失 1250 或从权益高点回撤 1500 时停止入场并尝试平仓。阈值按最大仓位相对原 2 股配置的倍数放大；阈值触发不能保证最终损失不超过阈值。
 
@@ -47,4 +47,4 @@ python strategies/stale_quote_sniping/run.py --live
 
 启动允许已有 A/B 仓位，只要求 B 没有遗留挂单。状态文件默认是 `state/default/stale_quote_sniping.json`。运行开始前先写入不可自动重启标记；只有正常结束、确认 sniper 的 B 增量回到零、无执行故障且日志正常时，才允许下次自动启动。未知 IOC、无法确认的部分成交、未恢复到 B 基准或风险停止都要求人工核对账户。
 
-主要日志事件包括 `stale_signal`、`stale_entry_pending`、`stale_entry_blocked`、`stale_entry_confirmed`、`stale_holding`、`stale_exit_intent`、`stale_exit_confirmed` 和 `session_end`。入场日志同时保存决策 FV、延迟后 FV、可执行 VWAP、edge 和冻结模型。
+主要日志事件包括 `stale_signal`、`stale_entry_pending`、`stale_entry_blocked`、`stale_entry_confirmed`、`stale_holding`、`stale_exit_intent`、`stale_exit_cancelled`、`stale_exit_confirmed` 和 `session_end`。入场日志同时保存决策 FV、延迟后 FV、可执行 VWAP、edge 和冻结模型；`stale_exit_cancelled` 保存消失的止盈目标与发送前的最新可执行 VWAP。

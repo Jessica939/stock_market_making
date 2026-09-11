@@ -13,6 +13,15 @@ SYMBOLS = ("PHILIPS_A", "PHILIPS_B")
 A, B = SYMBOLS
 
 
+class FairExitDisappeared(UnusableBook):
+    """A discretionary fair-value exit vanished on the execution book."""
+
+    def __init__(self, fair, execution):
+        super().__init__("fair-reached exit disappeared")
+        self.fair = fair
+        self.execution = execution
+
+
 def _positive(config, names):
     for key in names:
         value = config[key]
@@ -229,6 +238,7 @@ class Feed:
         self.last_prices = {}
         self.pending = None
         self.exit_epoch = 0.0
+        self.exit_guard = None
 
     def observe(self):
         raw = {}
@@ -254,6 +264,12 @@ class Feed:
                                 self.ticks[B], self.epoch(), self.config)
             if book["timestamp"] <= self.exit_epoch:
                 raise UnusableBook("await post-decision exit book")
+            guard = self.exit_guard
+            if guard is not None:
+                execution = vwap(book, guard["sign"] < 0, guard["quantity"])
+                reached = guard["sign"] * (execution - guard["fair_B"]) >= -1e-9
+                if not reached:
+                    raise FairExitDisappeared(guard["fair_B"], execution)
             return book
         pending = self.pending
         if pending is None or self.clock() >= pending["expires"]:
@@ -363,10 +379,17 @@ class Engine:
             self.exit_reason = reason
             self.exit_ready = self.clock() + delay
             self.feed.exit_epoch = 0.0 if immediate else self.epoch() + delay
+            self.feed.exit_guard = None
             self.journal.emit("stale_exit_intent", reason=reason, ready=self.exit_ready,
                               confirmation_seconds=delay, entry=self.entry)
         self.pending = None
         self.feed.pending = None
+
+    def clear_exit(self):
+        self.exit_reason = None
+        self.exit_ready = None
+        self.feed.exit_epoch = 0.0
+        self.feed.exit_guard = None
 
     def _observe_signal(self, raw):
         try:
@@ -422,14 +445,23 @@ class Engine:
                                   age=now - self.entry["opened_at"], entry=self.entry,
                                   exit_reason=self.exit_reason, signal=signal)
                 if self.exit_reason and now >= self.exit_ready:
+                    if self.exit_reason == "fair_reached":
+                        self.feed.exit_guard = dict(
+                            sign=self.entry["sign"], fair_B=self.entry["fair_B"],
+                            quantity=abs(position))
                     self.executor.send(B, "ask" if position > 0 else "bid", abs(position), reducing=True)
                     if self.executor.positions()[B] == 0:
                         self.journal.emit("stale_exit_confirmed", reason=self.exit_reason,
                                           held_seconds=now - self.entry["opened_at"])
                         self.entry = None
-                        self.exit_reason = None
-                        self.feed.exit_epoch = 0.0
+                        self.clear_exit()
                         self.cooldown_until = now + self.config["cooldown_seconds"]
+            except FairExitDisappeared as exc:
+                self.journal.emit("stale_exit_cancelled", reason=str(exc), position=position,
+                                  fair_B=exc.fair, execution_vwap=exc.execution)
+                self.clear_exit()
+                if now >= self.entry["opened_at"] + self.config["hold_seconds"]:
+                    self.request_exit("hold_timeout")
             except UnusableBook as exc:
                 self.journal.emit("stale_exit_blocked", reason=str(exc), position=position,
                                   exit_reason=self.exit_reason)

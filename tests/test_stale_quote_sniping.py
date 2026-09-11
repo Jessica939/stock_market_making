@@ -105,6 +105,49 @@ class StaleQuoteTests(unittest.TestCase):
         self.engine.step()
         self.assertEqual(self.exchange.positions["PHILIPS_B"], 0)
 
+    def test_fair_exit_is_cancelled_when_fresh_execution_price_falls_away(self):
+        self.enter()
+        self.frame(1.0, b_bid=101.0)
+        self.engine.step()
+        self.assertEqual(self.engine.exit_reason, "fair_reached")
+
+        # The post-decision execution book no longer reaches the entry fair.
+        # Do not turn the vanished profit-taking opportunity into a losing IOC.
+        self.frame(1.5, b_bid=100.0)
+        self.engine.step()
+        self.assertEqual(self.exchange.positions["PHILIPS_B"], 2)
+        self.assertIsNone(self.engine.exit_reason)
+        self.assertEqual(len(self.exchange.fills), 1)
+        cancelled = [fields for kind, fields in self.journal.events
+                     if kind == "stale_exit_cancelled"]
+        self.assertEqual(len(cancelled), 1)
+        self.assertEqual(cancelled[0]["reason"], "fair-reached exit disappeared")
+        self.assertAlmostEqual(cancelled[0]["fair_B"], 101.0)
+        self.assertAlmostEqual(cancelled[0]["execution_vwap"], 100.0)
+
+        # A later genuine opportunity can trigger and complete a new exit.
+        self.frame(2.0, b_bid=101.0)
+        self.engine.step()
+        self.frame(2.5, b_bid=101.0)
+        self.engine.step()
+        self.assertEqual(self.exchange.positions["PHILIPS_B"], 0)
+
+    def test_disappeared_fair_exit_becomes_timeout_when_hold_limit_has_passed(self):
+        self.enter()
+        self.frame(5.4, b_bid=101.0)
+        self.engine.step()
+        self.assertEqual(self.engine.exit_reason, "fair_reached")
+
+        self.frame(5.6, b_bid=100.0)
+        self.engine.step()
+        self.assertEqual(self.exchange.positions["PHILIPS_B"], 2)
+        self.assertEqual(self.engine.exit_reason, "hold_timeout")
+
+        # Timeout liquidation remains unconditional on the next fresh book.
+        self.frame(6.0, b_bid=100.0)
+        self.engine.step()
+        self.assertEqual(self.exchange.positions["PHILIPS_B"], 0)
+
     def test_missing_exit_book_keeps_confirmed_inventory(self):
         self.enter()
         self.frame(5.5, missing_b=True)
