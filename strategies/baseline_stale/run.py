@@ -1,0 +1,114 @@
+"""baseline-refine market making plus B stale IOC sniping; live is explicit."""
+import argparse
+import json
+from pathlib import Path
+import signal
+import sys
+import time
+
+DIRECTORY = Path(__file__).resolve().parent
+ROOT = DIRECTORY.parents[1]
+sys.path.insert(0, str(ROOT.parent))
+
+from stock_market_making.recording.storage import MARKET_DIR, RUNS_DIR
+from stock_market_making.strategies.common.runner import Journal
+from stock_market_making.strategies.stale_quote_sniping.engine import validate as validate_stale
+from stock_market_making.strategies.baseline_stale.engine import CombinedEngine
+from stock_market_making.strategies.baseline_refine_loader import load_baseline_refine
+
+VERSION = 'baseline_stale_v1'
+
+
+def load_config(path=None):
+    config = json.loads((DIRECTORY / 'config.json').read_text(encoding='utf-8'))
+    if path:
+        config.update(json.loads(Path(path).read_text(encoding='utf-8')))
+    stale_path = DIRECTORY.parent / 'stale_quote_sniping' / 'config.json'
+    stale = json.loads(stale_path.read_text(encoding='utf-8'))
+    stale.update(session_seconds=config['session_seconds'],
+                 closeout_seconds=config['closeout_seconds'],
+                 loop_seconds=config['loop_seconds'],
+                 max_updates_per_second=config['max_updates_per_second'])
+    validate_stale(stale)
+    if config['symbols'] != ['PHILIPS_A', 'PHILIPS_B']:
+        raise ValueError('symbols must be PHILIPS_A, PHILIPS_B')
+    for key in ('position_limit', 'max_net_lots', 'max_outstanding_volume',
+                'max_updates_per_second', 'baseline_b_position_limit',
+                'baseline_b_soft_limit'):
+        value = config[key]
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise ValueError(key + ' must be a positive integer')
+    if not config['baseline_b_soft_limit'] <= config['baseline_b_position_limit'] <= config['position_limit'] <= 100:
+        raise ValueError('invalid baseline B allocation')
+    return config, stale
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--live', action='store_true')
+    mode.add_argument('--check', action='store_true')
+    parser.add_argument('--config', type=Path)
+    parser.add_argument('--log-dir', type=Path, default=RUNS_DIR / 'baseline_stale')
+    parser.add_argument('--price-data-dir', type=Path, default=MARKET_DIR)
+    args = parser.parse_args(argv)
+    try:
+        config, stale = load_config(args.config)
+        baseline = load_baseline_refine()
+    except (OSError, ValueError, RuntimeError, KeyError) as exc:
+        parser.error(str(exc))
+    if not args.live:
+        print(json.dumps(dict(strategy=VERSION, config=config, stale=stale,
+                              baseline_version=baseline['STRATEGY_VERSION'],
+                              execution='one connection, one fill consumer, owner-attributed inventory'),
+                         ensure_ascii=False, indent=2))
+        return 0
+
+    from optibook.synchronous_client import Exchange
+    from stock_market_making.recording.shared_market_recording import RecordingExchange
+    raw = RecordingExchange(Exchange(max_nr_trade_history=10000), args.price_data_dir)
+    journal = Journal(args.log_dir, strategy=VERSION, config=config, stale_config=stale)
+    engine = None
+    failed = False
+
+    def stop(_signum, _frame):
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, stop)
+    try:
+        raw.connect()
+        engine = CombinedEngine(raw, config, stale, journal, baseline,
+                                price_data_dir=args.price_data_dir)
+        raw.start_recording()
+        journal.storage.link_market(raw.recorder.directory)
+        journal.emit('settings', strategy_version=VERSION, config=config, stale_config=stale)
+        while raw.is_connected() and time.monotonic() < engine.account.deadline:
+            try:
+                engine.step()
+                if engine.stopping and not any(engine.account.positions['pair'].values()):
+                    break
+            finally:
+                raw.sample_market_data()
+                time.sleep(config['loop_seconds'])
+    except KeyboardInterrupt:
+        pass
+    except Exception as exc:
+        failed = True
+        journal.emit('combined_fault', error=str(exc))
+        print(str(exc), file=sys.stderr)
+    finally:
+        try:
+            if engine is not None:
+                summary = engine.finish('runner_exit')
+                failed |= summary['halted'] or not summary['stale_flat']
+                print(json.dumps(summary, ensure_ascii=False))
+        finally:
+            try:
+                raw.disconnect()
+            finally:
+                journal.close()
+    return 2 if failed or journal.failed else 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

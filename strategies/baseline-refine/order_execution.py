@@ -72,6 +72,10 @@ class LimitedExchange:
         self._exchange = exchange
         self.max_outstanding_volume = _lots(
             max_outstanding_volume, name='max_outstanding_volume')
+        max_updates_per_second = _lots(
+            max_updates_per_second, name='max_updates_per_second')
+        if max_updates_per_second > 25:
+            raise ValueError('max_updates_per_second cannot exceed the exchange limit of 25')
         # This is the exchange's absolute per-instrument pre-trade limit, not a
         # strategy target. Keep the final guard here so an oversized quote or a
         # future strategy configuration cannot bypass it.

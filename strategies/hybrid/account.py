@@ -205,6 +205,19 @@ class SharedAccount:
             self.sleep(.05)
         self.audit()  # Late fills remain assigned to the original owner.
 
+    def cancel_owner_symbol(self, owner, symbol):
+        """Cancel one owner's orders on one instrument and reconcile late fills."""
+        if owner not in self.owners or symbol not in self.symbols:
+            self.fault('Invalid owner/symbol cancellation scope')
+        for oid in list(self.orders(symbol, owner)):
+            self.cancel(owner, symbol, oid)
+        until = self.clock() + self.config['cancel_confirmation_seconds']
+        while self.orders(symbol, owner):
+            if self.clock() >= until:
+                self.fault('Cancellation has not been confirmed')
+            self.sleep(.05)
+        self.audit()
+
     def insert(self, owner, s, *, price, volume, side, order_type):
         if (owner not in self.owners or s not in self.symbols or side not in ('bid', 'ask')
                 or not integer(volume) or volume <= 0):
@@ -221,8 +234,8 @@ class SharedAccount:
                                              and (owner == 'mm' or not reducing)):
             raise RiskBlocked('Trading deadline')
         all_orders = {i: self.orders(i) for i in self.symbols}
-        if owner == 'pair' and any(self.orders(i, 'mm') for i in self.symbols):
-            raise RiskBlocked('Cancel MM orders before pair IOC execution')
+        if owner == 'pair' and self.orders(s, 'mm'):
+            raise RiskBlocked('Cancel same-instrument MM orders before IOC execution')
         sign = 1 if side == 'bid' else -1
         own_pending = sum(o.volume for oid, o in all_orders[s].items()
                           if o.side == side and self.registry[s, oid]['owner'] == owner)

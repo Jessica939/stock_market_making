@@ -13,6 +13,7 @@ execution = importlib.import_module(PACKAGE + '.order_execution')
 QuoteManager = execution.QuoteManager
 LimitedExchange = execution.LimitedExchange
 OrderLimitError = execution.OrderLimitError
+UpdateRateLimiter = execution.UpdateRateLimiter
 A, B = 'PHILIPS_A', 'PHILIPS_B'
 
 
@@ -203,6 +204,26 @@ class NetLimitTests(unittest.TestCase):
 
     def quantity(self,x,iid,side):
         return sum(o.volume for o in x.orders[iid].values() if o.side==side)
+
+    def test_final_sender_rejects_update_rate_above_exchange_limit(self):
+        with self.assertRaisesRegex(ValueError, 'exchange limit of 25'):
+            LimitedExchange(Exchange(), max_updates_per_second=26)
+
+    def test_update_rate_limiter_waits_at_25_in_rolling_second(self):
+        now = [0.0]
+        sleeps = []
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            now[0] += seconds
+
+        limiter = UpdateRateLimiter(max_updates=25, clock=lambda: now[0], sleep=sleep)
+        for _ in range(25):
+            limiter.acquire()
+        self.assertEqual(sleeps, [])
+        limiter.acquire()
+        self.assertEqual(len(sleeps), 1)
+        self.assertGreaterEqual(sleeps[0], 1.0)
 
     def test_combined_positions_limit_B_to_remaining_50(self):
         x=Exchange({A:100,B:50})

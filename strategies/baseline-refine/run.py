@@ -68,6 +68,8 @@ def main():
                               net_position_limit=strategy['NET_POSITION_LIMIT'],
                               net_position_scope='PHILIPS_A + PHILIPS_B and same-side resting orders',
                               a_entry_volume=strategy['ORDER_VOLUME'],
+                              loop_seconds=strategy['LOOP_SECONDS'],
+                              max_updates_per_second=strategy['MAX_UPDATES_PER_SECOND'],
                               horizon_seconds=strategy['CYCLE_SETTINGS'].horizon_seconds,
                               cycle_settings=asdict(strategy['CYCLE_SETTINGS']),
                               online_adaptation='time-ordered period/window selection and issued forecast monitoring',
